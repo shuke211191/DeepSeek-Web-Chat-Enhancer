@@ -55,6 +55,24 @@
       "--dsw-alias-bg-overlay": "rgba(255,255,255,0.06)"
     }
   };
+  var K = {
+    PAGE_ON: "dse3_page",
+    BUBBLE_ON: "dse3_bubble",
+    PAGE_COLORS: "dse3_pc",
+    BUBBLE_COLORS: "dse3_bc",
+    STRONG_ON: "dse3_son",
+    STRONG_C: "dse3_scol",
+    CODE_ON: "dse3_con",
+    CODE_C: "dse3_ccol",
+    FONT_ON: "dse3_fon",
+    FONT_SRC: "dse3_fsrc",
+    FONT_NAME: "dse3_fname",
+    AVATAR_ON: "dse3_avon",
+    AVATAR_UNAME: "dse3_avun",
+    AVATAR_ANAME: "dse3_avan",
+    AVATAR_UC: "dse3_avuc",
+    AVATAR_AC: "dse3_avac"
+  };
   var S = {
     pageOn: false,
     bubbleOn: false,
@@ -91,6 +109,7 @@
     avatarScrollContainer: null,
     avatarScrollRetry: null
   };
+  S.K = K;
   function cloneObj(o) {
     return JSON.parse(JSON.stringify(o));
   }

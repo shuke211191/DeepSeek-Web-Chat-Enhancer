@@ -78,3 +78,5 @@ export var S = {
     avatarUserEl: null, avatarAIEl: null, avatarRAF: null,
     avatarScrollContainer: null, avatarScrollRetry: null
 };
+
+S.K = K;
