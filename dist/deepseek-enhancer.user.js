@@ -821,10 +821,13 @@
         S.bubbleOn = false;
         S.strongOn = false;
         S.codeOn = false;
+        S.fontOn = false;
         GM_setValue(S.K.PAGE_ON, false);
         GM_setValue(S.K.BUBBLE_ON, false);
         GM_setValue(S.K.STRONG_ON, false);
         GM_setValue(S.K.CODE_ON, false);
+        GM_setValue(S.K.FONT_ON, false);
+        setAvatarState(false);
         applyTheme(getMode());
         tagMessageRoles();
         loadFont();

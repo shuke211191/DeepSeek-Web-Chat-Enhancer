@@ -3,6 +3,7 @@ import { getMode, updateUI } from './utils';
 import { tagMessageRoles } from './messages';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
+import { setAvatarState } from './avatars';
 import { createPanel, syncPanelMode } from './panel';
 
 export function createSwitcher() {
@@ -25,8 +26,9 @@ export function createSwitcher() {
             else { syncPanelMode(); S.panelRef.style.display = 'flex'; S.panelVisible = true; }
         } else if (btn.dataset.t === 'original') {
             if (S.panelRef) S.panelRef.style.display = 'none';
-            S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false;
-            GM_setValue(S.K.PAGE_ON, false); GM_setValue(S.K.BUBBLE_ON, false); GM_setValue(S.K.STRONG_ON, false); GM_setValue(S.K.CODE_ON, false);
+            S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false; S.fontOn = false;
+            GM_setValue(S.K.PAGE_ON, false); GM_setValue(S.K.BUBBLE_ON, false); GM_setValue(S.K.STRONG_ON, false); GM_setValue(S.K.CODE_ON, false); GM_setValue(S.K.FONT_ON, false);
+            setAvatarState(false);
             applyTheme(getMode()); tagMessageRoles(); loadFont(); updateUI();
         }
         updateUI();
