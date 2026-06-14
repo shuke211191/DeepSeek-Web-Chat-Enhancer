@@ -57,7 +57,10 @@ export var K = {
     AVATAR_UNAME: 'dse3_avun',
     AVATAR_ANAME: 'dse3_avan',
     AVATAR_UC: 'dse3_avuc',
-    AVATAR_AC: 'dse3_avac'
+    AVATAR_AC: 'dse3_avac',
+    AVATAR_SIZE: 'dse3_avsz',
+    AVATAR_UIMG: 'dse3_avui',
+    AVATAR_AIMG: 'dse3_avai'
 };
 
 export var S = {
@@ -71,6 +74,7 @@ export var S = {
     fontSrc: 'system', fontName: '',
     avatarUName: '你', avatarAName: 'DeepSeek',
     avatarUC: '#5686fe', avatarAC: '#10a37f',
+    avatarSize: 30, avatarUserImg: '', avatarAIImg: '',
     currentMode: 'light', currentItemKey: 1, maxItemKey: 0,
     styleEl: null, fontLinkEl: null, panelRef: null,
     panelVisible: false, panelMode: 'light', activePanelTab: 'page',

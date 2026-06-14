@@ -8,26 +8,61 @@ Object.defineProperty(S, 'avatarAIEl', { get: function() { return avatarAIEl; },
 Object.defineProperty(S, 'avatarRAF', { get: function() { return avatarRAF; }, set: function(v) { avatarRAF = v; }, configurable: true });
 
 export function createFloatAvatars() {
-    if (avatarUserEl) return;
-    var css = '#dse-avatar-ai,#dse-avatar-user{position:fixed;z-index:100;display:flex;flex-direction:column;align-items:center;gap:3px;width:36px;pointer-events:none;transform:translateY(-50%);}' +
-        '.dse-fav-circle{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.18);}' +
-        '.dse-fav-name{font-size:10px;color:#9ca3af;text-align:center;max-width:36px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.25);}';
-    GM_addStyle(css);
+    if (avatarUserEl) { applyAvatarSize(); return; }
+    GM_addStyle(
+        '#dse-avatar-ai,#dse-avatar-user{position:fixed;z-index:100;display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;transform:translateY(-50%);}' +
+        '.dse-fav-circle{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;background-size:cover;background-position:center;box-shadow:0 2px 8px rgba(0,0,0,.18);}' +
+        '.dse-fav-name{font-size:10px;color:#9ca3af;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.25);}'
+    );
 
     avatarUserEl = document.createElement('div'); avatarUserEl.id = 'dse-avatar-user'; avatarUserEl.style.display = 'none';
     avatarUserEl.innerHTML = '<div class="dse-fav-circle"></div><div class="dse-fav-name"></div>';
     avatarAIEl = document.createElement('div'); avatarAIEl.id = 'dse-avatar-ai'; avatarAIEl.style.display = 'none';
     avatarAIEl.innerHTML = '<div class="dse-fav-circle"></div><div class="dse-fav-name"></div>';
     document.body.appendChild(avatarUserEl); document.body.appendChild(avatarAIEl);
+    applyAvatarSize();
     updateAvatarContent();
+}
+
+function applyAvatarStyle(el, size) {
+    var sz = size + 'px';
+    var circle = el.querySelector('.dse-fav-circle');
+    if (circle) { circle.style.width = sz; circle.style.height = sz; circle.style.borderRadius = '50%'; circle.style.fontSize = Math.round(size * 0.5) + 'px'; }
+    var name = el.querySelector('.dse-fav-name');
+    if (name) name.style.maxWidth = sz;
+    el.style.width = sz;
+}
+
+export function applyAvatarSize() {
+    if (!avatarUserEl) return;
+    var size = S.avatarSize || 30;
+    applyAvatarStyle(avatarUserEl, size);
+    applyAvatarStyle(avatarAIEl, size);
+    scheduleAvatarUpdate();
 }
 
 export function updateAvatarContent() {
     if (!avatarUserEl) return;
-    var uc = avatarUserEl.querySelector('.dse-fav-circle'); uc.style.background = S.avatarUC; uc.textContent = (S.avatarUName || '你').charAt(0);
-    avatarUserEl.querySelector('.dse-fav-name').textContent = S.avatarUName || '你';
-    var ac = avatarAIEl.querySelector('.dse-fav-circle'); ac.style.background = S.avatarAC; ac.textContent = (S.avatarAName || 'D').charAt(0);
-    avatarAIEl.querySelector('.dse-fav-name').textContent = S.avatarAName || 'DeepSeek';
+    var size = S.avatarSize || 30;
+
+    function fill(circle, nameEl, imgUrl, color, name) {
+        if (imgUrl) {
+            circle.style.backgroundImage = 'url(' + imgUrl + ')';
+            circle.style.backgroundSize = 'cover';
+            circle.style.backgroundPosition = 'center';
+            circle.style.backgroundColor = 'transparent';
+            circle.textContent = '';
+        } else {
+            circle.style.backgroundImage = '';
+            circle.style.backgroundSize = '';
+            circle.style.backgroundColor = color;
+            circle.textContent = (name || '').charAt(0);
+        }
+        nameEl.textContent = name || '';
+    }
+
+    fill(avatarUserEl.querySelector('.dse-fav-circle'), avatarUserEl.querySelector('.dse-fav-name'), S.avatarUserImg, S.avatarUC, S.avatarUName);
+    fill(avatarAIEl.querySelector('.dse-fav-circle'), avatarAIEl.querySelector('.dse-fav-name'), S.avatarAIImg, S.avatarAC, S.avatarAName);
 }
 
 function getViewportForAvatar() {
@@ -71,9 +106,9 @@ export function updateAvatarPositions() {
         if (!avatarEl || !msg) { if (avatarEl) avatarEl.style.display = 'none'; return; }
         var box = getMessageContentBox(msg, role); if (!box) { avatarEl.style.display = 'none'; return; }
         var rect = box.getBoundingClientRect(); if (rect.height < 4 || rect.width < 4) { avatarEl.style.display = 'none'; return; }
-        var avatarWidth = 36, gap = 12;
+        var avatarWidth = S.avatarSize || 30, gap = 12;
         var visibleTop = Math.max(rect.top, viewport.top);
-        var top = clampNumber(visibleTop + 22, clampTop, clampBottom);
+        var top = clampNumber(visibleTop + avatarWidth / 2 + 2, clampTop, clampBottom);
         var left = role === 'assistant' ? rect.left - avatarWidth - gap : rect.right + gap;
         left = clampNumber(left, 8, window.innerWidth - avatarWidth - 8);
         avatarEl.style.display = ''; avatarEl.style.top = top + 'px'; avatarEl.style.left = left + 'px'; avatarEl.style.right = 'auto';

@@ -71,7 +71,10 @@
     AVATAR_UNAME: "dse3_avun",
     AVATAR_ANAME: "dse3_avan",
     AVATAR_UC: "dse3_avuc",
-    AVATAR_AC: "dse3_avac"
+    AVATAR_AC: "dse3_avac",
+    AVATAR_SIZE: "dse3_avsz",
+    AVATAR_UIMG: "dse3_avui",
+    AVATAR_AIMG: "dse3_avai"
   };
   var S = {
     pageOn: false,
@@ -90,6 +93,9 @@
     avatarAName: "DeepSeek",
     avatarUC: "#5686fe",
     avatarAC: "#10a37f",
+    avatarSize: 30,
+    avatarUserImg: "",
+    avatarAIImg: "",
     currentMode: "light",
     currentItemKey: 1,
     maxItemKey: 0,
@@ -285,9 +291,13 @@
     avatarRAF = v;
   }, configurable: true });
   function createFloatAvatars() {
-    if (avatarUserEl) return;
-    var css = "#dse-avatar-ai,#dse-avatar-user{position:fixed;z-index:100;display:flex;flex-direction:column;align-items:center;gap:3px;width:36px;pointer-events:none;transform:translateY(-50%);}.dse-fav-circle{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.18);}.dse-fav-name{font-size:10px;color:#9ca3af;text-align:center;max-width:36px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.25);}";
-    GM_addStyle(css);
+    if (avatarUserEl) {
+      applyAvatarSize();
+      return;
+    }
+    GM_addStyle(
+      "#dse-avatar-ai,#dse-avatar-user{position:fixed;z-index:100;display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;transform:translateY(-50%);}.dse-fav-circle{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;background-size:cover;background-position:center;box-shadow:0 2px 8px rgba(0,0,0,.18);}.dse-fav-name{font-size:10px;color:#9ca3af;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2;text-shadow:0 1px 2px rgba(0,0,0,.25);}"
+    );
     avatarUserEl = document.createElement("div");
     avatarUserEl.id = "dse-avatar-user";
     avatarUserEl.style.display = "none";
@@ -298,18 +308,49 @@
     avatarAIEl.innerHTML = '<div class="dse-fav-circle"></div><div class="dse-fav-name"></div>';
     document.body.appendChild(avatarUserEl);
     document.body.appendChild(avatarAIEl);
+    applyAvatarSize();
     updateAvatarContent();
+  }
+  function applyAvatarStyle(el, size) {
+    var sz = size + "px";
+    var circle = el.querySelector(".dse-fav-circle");
+    if (circle) {
+      circle.style.width = sz;
+      circle.style.height = sz;
+      circle.style.borderRadius = "50%";
+      circle.style.fontSize = Math.round(size * 0.5) + "px";
+    }
+    var name = el.querySelector(".dse-fav-name");
+    if (name) name.style.maxWidth = sz;
+    el.style.width = sz;
+  }
+  function applyAvatarSize() {
+    if (!avatarUserEl) return;
+    var size = S.avatarSize || 30;
+    applyAvatarStyle(avatarUserEl, size);
+    applyAvatarStyle(avatarAIEl, size);
+    scheduleAvatarUpdate();
   }
   function updateAvatarContent() {
     if (!avatarUserEl) return;
-    var uc = avatarUserEl.querySelector(".dse-fav-circle");
-    uc.style.background = S.avatarUC;
-    uc.textContent = (S.avatarUName || "你").charAt(0);
-    avatarUserEl.querySelector(".dse-fav-name").textContent = S.avatarUName || "你";
-    var ac = avatarAIEl.querySelector(".dse-fav-circle");
-    ac.style.background = S.avatarAC;
-    ac.textContent = (S.avatarAName || "D").charAt(0);
-    avatarAIEl.querySelector(".dse-fav-name").textContent = S.avatarAName || "DeepSeek";
+    S.avatarSize || 30;
+    function fill(circle, nameEl, imgUrl, color, name) {
+      if (imgUrl) {
+        circle.style.backgroundImage = "url(" + imgUrl + ")";
+        circle.style.backgroundSize = "cover";
+        circle.style.backgroundPosition = "center";
+        circle.style.backgroundColor = "transparent";
+        circle.textContent = "";
+      } else {
+        circle.style.backgroundImage = "";
+        circle.style.backgroundSize = "";
+        circle.style.backgroundColor = color;
+        circle.textContent = (name || "").charAt(0);
+      }
+      nameEl.textContent = name || "";
+    }
+    fill(avatarUserEl.querySelector(".dse-fav-circle"), avatarUserEl.querySelector(".dse-fav-name"), S.avatarUserImg, S.avatarUC, S.avatarUName);
+    fill(avatarAIEl.querySelector(".dse-fav-circle"), avatarAIEl.querySelector(".dse-fav-name"), S.avatarAIImg, S.avatarAC, S.avatarAName);
   }
   function getRole(el) {
     if (el.dataset.dsRole) return el.dataset.dsRole;
@@ -373,9 +414,9 @@
         avatarEl.style.display = "none";
         return;
       }
-      var avatarWidth = 36, gap = 12;
+      var avatarWidth = S.avatarSize || 30, gap = 12;
       var visibleTop2 = Math.max(rect2.top, viewport.top);
-      var top = clampNumber(visibleTop2 + 22, clampTop, clampBottom);
+      var top = clampNumber(visibleTop2 + avatarWidth / 2 + 2, clampTop, clampBottom);
       var left = role2 === "assistant" ? rect2.left - avatarWidth - gap : rect2.right + gap;
       left = clampNumber(left, 8, window.innerWidth - avatarWidth - 8);
       avatarEl.style.display = "";
@@ -618,16 +659,6 @@
       renderPanelContent();
     });
   }
-  function syncPanelLeftToggles() {
-    var pageToggle = document.getElementById("dse-page-toggle");
-    var bubbleToggle = document.getElementById("dse-bubble-toggle");
-    var fontToggle = document.getElementById("dse-font-toggle");
-    var avatarToggle = document.getElementById("dse-avatar-toggle");
-    if (pageToggle) pageToggle.checked = S.pageOn;
-    if (bubbleToggle) bubbleToggle.checked = S.bubbleOn;
-    if (fontToggle) fontToggle.checked = S.fontOn;
-    if (avatarToggle) avatarToggle.checked = S.avatarOn;
-  }
   function renderPanelContent() {
     var right = document.getElementById("dse-panel-right");
     if (!right) return;
@@ -655,8 +686,11 @@
     } else if (S.activePanelTab === "avatar") {
       html += '<div class="dse-r"><label>你的名字</label><input id="dse-avatar-uname" class="dse-input" type="text" value="' + esc(S.avatarUName) + '"></div>';
       html += '<div class="dse-r"><label>你的头像色</label><input type="color" data-k="avuc" data-g="avatar" value="' + S.avatarUC + '"></div>';
+      html += '<div class="dse-r"><label>你的头像图</label><input id="dse-avatar-uimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarUserImg) + '"></div>';
       html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
       html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
+      html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
+      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="64" step="2" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -670,7 +704,6 @@
       })(modeTabs[ti]);
     }
     rebindPanelToggles();
-    syncPanelLeftToggles();
   }
   function selectPanelTab(name) {
     S.activePanelTab = name;
@@ -745,6 +778,21 @@
         GM_setValue(S.K.AVATAR_ANAME, S.avatarAName);
         applyAvatarSettings();
       }
+      if (e.target.id === "dse-avatar-uimg") {
+        S.avatarUserImg = e.target.value;
+        GM_setValue(S.K.AVATAR_UIMG, S.avatarUserImg);
+        applyAvatarSettings();
+      }
+      if (e.target.id === "dse-avatar-aimg") {
+        S.avatarAIImg = e.target.value;
+        GM_setValue(S.K.AVATAR_AIMG, S.avatarAIImg);
+        applyAvatarSettings();
+      }
+      if (e.target.id === "dse-avatar-size") {
+        S.avatarSize = parseInt(e.target.value, 10) || 30;
+        GM_setValue(S.K.AVATAR_SIZE, S.avatarSize);
+        applyAvatarSize();
+      }
     });
     panel.querySelector(".dse-rst").addEventListener("click", function() {
       S.pageOn = false;
@@ -763,6 +811,9 @@
       S.avatarAName = "DeepSeek";
       S.avatarUC = "#5686fe";
       S.avatarAC = "#10a37f";
+      S.avatarSize = 30;
+      S.avatarUserImg = "";
+      S.avatarAIImg = "";
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -944,6 +995,9 @@
     S.avatarAName = GM_getValue(S.K.AVATAR_ANAME, "DeepSeek");
     S.avatarUC = GM_getValue(S.K.AVATAR_UC, "#5686fe");
     S.avatarAC = GM_getValue(S.K.AVATAR_AC, "#10a37f");
+    S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 30);
+    S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, "");
+    S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, "");
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;

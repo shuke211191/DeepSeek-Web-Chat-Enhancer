@@ -2,7 +2,7 @@ import { S, DEF } from './state';
 import { cloneObj, cloneDef, esc, getMode, updateUI } from './utils';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
-import { setAvatarState, applyAvatarSettings } from './avatars';
+import { setAvatarState, applyAvatarSettings, applyAvatarSize } from './avatars';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -63,8 +63,11 @@ export function renderPanelContent() {
     } else if (S.activePanelTab === 'avatar') {
         html += '<div class="dse-r"><label>你的名字</label><input id="dse-avatar-uname" class="dse-input" type="text" value="' + esc(S.avatarUName) + '"></div>';
         html += '<div class="dse-r"><label>你的头像色</label><input type="color" data-k="avuc" data-g="avatar" value="' + S.avatarUC + '"></div>';
+        html += '<div class="dse-r"><label>你的头像图</label><input id="dse-avatar-uimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarUserImg) + '"></div>';
         html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
         html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
+        html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
+        html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="64" step="2" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
     }
     right.innerHTML = html;
 
@@ -73,7 +76,6 @@ export function renderPanelContent() {
         (function (tab) { tab.addEventListener('click', function (e) { e.stopPropagation(); S.panelMode = tab.dataset.mode; renderPanelContent(); }); })(modeTabs[ti]);
     }
     rebindPanelToggles();
-    syncPanelLeftToggles();
 }
 
 function selectPanelTab(name) {
@@ -129,6 +131,9 @@ export function createPanel() {
         if (e.target.id === 'dse-font-name') { S.fontName = e.target.value; GM_setValue(S.K.FONT_NAME, S.fontName); loadFont(); }
         if (e.target.id === 'dse-avatar-uname') { S.avatarUName = e.target.value || '你'; GM_setValue(S.K.AVATAR_UNAME, S.avatarUName); applyAvatarSettings(); }
         if (e.target.id === 'dse-avatar-aname') { S.avatarAName = e.target.value || 'DeepSeek'; GM_setValue(S.K.AVATAR_ANAME, S.avatarAName); applyAvatarSettings(); }
+        if (e.target.id === 'dse-avatar-uimg') { S.avatarUserImg = e.target.value; GM_setValue(S.K.AVATAR_UIMG, S.avatarUserImg); applyAvatarSettings(); }
+        if (e.target.id === 'dse-avatar-aimg') { S.avatarAIImg = e.target.value; GM_setValue(S.K.AVATAR_AIMG, S.avatarAIImg); applyAvatarSettings(); }
+        if (e.target.id === 'dse-avatar-size') { S.avatarSize = parseInt(e.target.value, 10) || 30; GM_setValue(S.K.AVATAR_SIZE, S.avatarSize); applyAvatarSize(); }
     });
 
     panel.querySelector('.dse-rst').addEventListener('click', function () {
@@ -137,6 +142,7 @@ export function createPanel() {
         S.bubbleColors = { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' };
         S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
+        S.avatarSize = 30; S.avatarUserImg = ''; S.avatarAIImg = '';
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); setAvatarState(false);
     });
