@@ -67,8 +67,8 @@ export function renderPanelContent() {
         html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
         html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
         html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
-        html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="256" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
-        html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="40" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + 'px</span></div>';
+        html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
+        html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + 'px</span></div>';
     }
     right.innerHTML = html;
 
@@ -143,7 +143,7 @@ export function createPanel() {
         S.bubbleColors = { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' };
         S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
-        S.avatarSize = 30; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 12;
+        S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
     });

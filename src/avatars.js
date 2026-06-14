@@ -29,7 +29,7 @@ function applyAvatarStyle(el, size) {
     var circle = el.querySelector('.dse-fav-circle');
     if (circle) { circle.style.width = sz; circle.style.height = sz; circle.style.borderRadius = '50%'; circle.style.fontSize = Math.round(size * 0.5) + 'px'; }
     var name = el.querySelector('.dse-fav-name');
-    if (name) { name.style.maxWidth = sz; name.style.fontSize = Math.round(size * 0.28) + 'px'; }
+    if (name) {name.style.maxWidth = Math.max(48, size * 2.2) + "px";name.style.fontSize = Math.round(size * 0.28) + 'px'; }
     el.style.width = sz;
 }
 

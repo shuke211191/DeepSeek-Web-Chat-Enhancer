@@ -95,10 +95,10 @@
     avatarAName: "DeepSeek",
     avatarUC: "#5686fe",
     avatarAC: "#10a37f",
-    avatarSize: 30,
+    avatarSize: 64,
     avatarUserImg: "",
     avatarAIImg: "https://www.deepseek.com/favicon.ico",
-    avatarGap: 12,
+    avatarGap: 32,
     currentMode: "light",
     currentItemKey: 1,
     maxItemKey: 0,
@@ -325,7 +325,7 @@
     }
     var name = el.querySelector(".dse-fav-name");
     if (name) {
-      name.style.maxWidth = sz;
+      name.style.maxWidth = Math.max(48, size * 2.2) + "px";
       name.style.fontSize = Math.round(size * 0.28) + "px";
     }
     el.style.width = sz;
@@ -696,8 +696,8 @@
       html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
       html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
       html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
-      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="256" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
-      html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="40" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
+      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
+      html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -821,10 +821,10 @@
       S.avatarAName = "DeepSeek";
       S.avatarUC = "#5686fe";
       S.avatarAC = "#10a37f";
-      S.avatarSize = 30;
+      S.avatarSize = 64;
       S.avatarUserImg = "";
       S.avatarAIImg = "https://www.deepseek.com/favicon.ico";
-      S.avatarGap = 12;
+      S.avatarGap = 32;
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -1007,10 +1007,10 @@
     S.avatarAName = GM_getValue(S.K.AVATAR_ANAME, "DeepSeek");
     S.avatarUC = GM_getValue(S.K.AVATAR_UC, "#5686fe");
     S.avatarAC = GM_getValue(S.K.AVATAR_AC, "#10a37f");
-    S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 30);
+    S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 64);
     S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, "");
     S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, "https://www.deepseek.com/favicon.ico");
-    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 12);
+    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 32);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;

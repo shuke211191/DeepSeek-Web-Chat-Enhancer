@@ -26,10 +26,10 @@ function init() {
     S.avatarAName = GM_getValue(S.K.AVATAR_ANAME, 'DeepSeek');
     S.avatarUC = GM_getValue(S.K.AVATAR_UC, '#5686fe');
     S.avatarAC = GM_getValue(S.K.AVATAR_AC, '#10a37f');
-    S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 30);
+    S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 64);
     S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, '');
     S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, 'https://www.deepseek.com/favicon.ico');
-    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 12);
+    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 32);
 
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
