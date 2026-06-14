@@ -2,7 +2,7 @@ import { S, DEF } from './state';
 import { cloneObj, cloneDef, esc, getMode, updateUI } from './utils';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
-import { setAvatarState, applyAvatarSettings, applyAvatarSize } from './avatars';
+import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpdate } from './avatars';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -67,7 +67,8 @@ export function renderPanelContent() {
         html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
         html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
         html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
-        html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="64" step="2" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
+        html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="256" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
+        html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="40" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + 'px</span></div>';
     }
     right.innerHTML = html;
 
@@ -133,18 +134,18 @@ export function createPanel() {
         if (e.target.id === 'dse-avatar-aname') { S.avatarAName = e.target.value || 'DeepSeek'; GM_setValue(S.K.AVATAR_ANAME, S.avatarAName); applyAvatarSettings(); }
         if (e.target.id === 'dse-avatar-uimg') { S.avatarUserImg = e.target.value; GM_setValue(S.K.AVATAR_UIMG, S.avatarUserImg); applyAvatarSettings(); }
         if (e.target.id === 'dse-avatar-aimg') { S.avatarAIImg = e.target.value; GM_setValue(S.K.AVATAR_AIMG, S.avatarAIImg); applyAvatarSettings(); }
-        if (e.target.id === 'dse-avatar-size') { S.avatarSize = parseInt(e.target.value, 10) || 30; GM_setValue(S.K.AVATAR_SIZE, S.avatarSize); applyAvatarSize(); }
+        if (e.target.id === 'dse-avatar-size') { S.avatarSize = parseInt(e.target.value, 10) || 30; GM_setValue(S.K.AVATAR_SIZE, S.avatarSize); applyAvatarSize(); var s = e.target.nextElementSibling; if (s) s.textContent = S.avatarSize + 'px'; }
+        if (e.target.id === 'dse-avatar-gap') { S.avatarGap = parseInt(e.target.value, 10) || 12; GM_setValue(S.K.AVATAR_GAP, S.avatarGap); scheduleAvatarUpdate(); var g = e.target.nextElementSibling; if (g) g.textContent = S.avatarGap + 'px'; }
     });
 
     panel.querySelector('.dse-rst').addEventListener('click', function () {
-        S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false; S.fontOn = false; S.avatarOn = false;
         S.pageColors = cloneDef(DEF);
         S.bubbleColors = { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' };
         S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
-        S.avatarSize = 30; S.avatarUserImg = ''; S.avatarAIImg = '';
+        S.avatarSize = 30; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 12;
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
-        syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); setAvatarState(false);
+        syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
     });
 
     document.addEventListener('click', function (e) { if (!panel.contains(e.target) && !e.target.closest('#dse-panel-trigger')) { panel.style.display = 'none'; S.panelVisible = false; } });

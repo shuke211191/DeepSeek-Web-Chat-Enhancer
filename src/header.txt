@@ -3,7 +3,8 @@
 // @namespace    https://chat.deepseek.com/
 // @version      4.0.0
 // @description  配色+字体+浮动头像+方向键跳转，模块化版本
-// @author       You
+// @author       hjx
+// @license      MIT
 // @match        https://chat.deepseek.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue

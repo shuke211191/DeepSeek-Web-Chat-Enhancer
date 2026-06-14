@@ -3,7 +3,8 @@
 // @namespace    https://chat.deepseek.com/
 // @version      4.0.0
 // @description  配色+字体+浮动头像+方向键跳转，模块化版本
-// @author       You
+// @author       hjx
+// @license      MIT
 // @match        https://chat.deepseek.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
@@ -74,7 +75,8 @@
     AVATAR_AC: "dse3_avac",
     AVATAR_SIZE: "dse3_avsz",
     AVATAR_UIMG: "dse3_avui",
-    AVATAR_AIMG: "dse3_avai"
+    AVATAR_AIMG: "dse3_avai",
+    AVATAR_GAP: "dse3_avgp"
   };
   var S = {
     pageOn: false,
@@ -95,7 +97,8 @@
     avatarAC: "#10a37f",
     avatarSize: 30,
     avatarUserImg: "",
-    avatarAIImg: "",
+    avatarAIImg: "https://www.deepseek.com/favicon.ico",
+    avatarGap: 12,
     currentMode: "light",
     currentItemKey: 1,
     maxItemKey: 0,
@@ -321,7 +324,10 @@
       circle.style.fontSize = Math.round(size * 0.5) + "px";
     }
     var name = el.querySelector(".dse-fav-name");
-    if (name) name.style.maxWidth = sz;
+    if (name) {
+      name.style.maxWidth = sz;
+      name.style.fontSize = Math.round(size * 0.28) + "px";
+    }
     el.style.width = sz;
   }
   function applyAvatarSize() {
@@ -414,7 +420,7 @@
         avatarEl.style.display = "none";
         return;
       }
-      var avatarWidth = S.avatarSize || 30, gap = 12;
+      var avatarWidth = S.avatarSize || 30, gap = S.avatarGap || 12;
       var visibleTop2 = Math.max(rect2.top, viewport.top);
       var top = clampNumber(visibleTop2 + avatarWidth / 2 + 2, clampTop, clampBottom);
       var left = role2 === "assistant" ? rect2.left - avatarWidth - gap : rect2.right + gap;
@@ -690,7 +696,8 @@
       html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
       html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
       html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
-      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="64" step="2" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
+      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="256" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
+      html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="40" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -792,15 +799,18 @@
         S.avatarSize = parseInt(e.target.value, 10) || 30;
         GM_setValue(S.K.AVATAR_SIZE, S.avatarSize);
         applyAvatarSize();
+        var s = e.target.nextElementSibling;
+        if (s) s.textContent = S.avatarSize + "px";
+      }
+      if (e.target.id === "dse-avatar-gap") {
+        S.avatarGap = parseInt(e.target.value, 10) || 12;
+        GM_setValue(S.K.AVATAR_GAP, S.avatarGap);
+        scheduleAvatarUpdate();
+        var g = e.target.nextElementSibling;
+        if (g) g.textContent = S.avatarGap + "px";
       }
     });
     panel.querySelector(".dse-rst").addEventListener("click", function() {
-      S.pageOn = false;
-      S.bubbleOn = false;
-      S.strongOn = false;
-      S.codeOn = false;
-      S.fontOn = false;
-      S.avatarOn = false;
       S.pageColors = cloneDef(DEF);
       S.bubbleColors = { userBg: "#5686fe", userText: "#ffffff", aiBgL: "#f8fafc", aiBgD: "#1e2430", aiTextL: "#1a1a2e", aiTextD: "#d1d5db" };
       S.strongColors = { light: "#1a1a2e", dark: "#e5e7eb" };
@@ -813,7 +823,8 @@
       S.avatarAC = "#10a37f";
       S.avatarSize = 30;
       S.avatarUserImg = "";
-      S.avatarAIImg = "";
+      S.avatarAIImg = "https://www.deepseek.com/favicon.ico";
+      S.avatarGap = 12;
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -827,7 +838,8 @@
       applyTheme(getMode());
       loadFont();
       updateUI();
-      setAvatarState(false);
+      applyAvatarSettings();
+      applyAvatarSize();
     });
     document.addEventListener("click", function(e) {
       if (!panel.contains(e.target) && !e.target.closest("#dse-panel-trigger")) {
@@ -997,7 +1009,8 @@
     S.avatarAC = GM_getValue(S.K.AVATAR_AC, "#10a37f");
     S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 30);
     S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, "");
-    S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, "");
+    S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, "https://www.deepseek.com/favicon.ico");
+    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 12);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;
@@ -1018,6 +1031,16 @@
       tagMessageRoles();
       updateMaxItemKey();
     }, 1800);
+    setTimeout(function() {
+      if (!S.avatarUserImg) {
+        var userAv = document.querySelector('img[src*="static.deepseek.com/user-avatar"]');
+        if (userAv && userAv.src) {
+          S.avatarUserImg = userAv.src;
+          GM_setValue(S.K.AVATAR_UIMG, S.avatarUserImg);
+          updateAvatarContent();
+        }
+      }
+    }, 1500);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();

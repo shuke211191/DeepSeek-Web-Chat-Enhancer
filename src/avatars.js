@@ -29,7 +29,7 @@ function applyAvatarStyle(el, size) {
     var circle = el.querySelector('.dse-fav-circle');
     if (circle) { circle.style.width = sz; circle.style.height = sz; circle.style.borderRadius = '50%'; circle.style.fontSize = Math.round(size * 0.5) + 'px'; }
     var name = el.querySelector('.dse-fav-name');
-    if (name) name.style.maxWidth = sz;
+    if (name) { name.style.maxWidth = sz; name.style.fontSize = Math.round(size * 0.28) + 'px'; }
     el.style.width = sz;
 }
 
@@ -106,7 +106,7 @@ export function updateAvatarPositions() {
         if (!avatarEl || !msg) { if (avatarEl) avatarEl.style.display = 'none'; return; }
         var box = getMessageContentBox(msg, role); if (!box) { avatarEl.style.display = 'none'; return; }
         var rect = box.getBoundingClientRect(); if (rect.height < 4 || rect.width < 4) { avatarEl.style.display = 'none'; return; }
-        var avatarWidth = S.avatarSize || 30, gap = 12;
+        var avatarWidth = S.avatarSize || 30, gap = S.avatarGap || 12;
         var visibleTop = Math.max(rect.top, viewport.top);
         var top = clampNumber(visibleTop + avatarWidth / 2 + 2, clampTop, clampBottom);
         var left = role === 'assistant' ? rect.left - avatarWidth - gap : rect.right + gap;

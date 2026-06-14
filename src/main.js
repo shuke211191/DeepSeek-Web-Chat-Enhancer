@@ -3,7 +3,7 @@ import { cloneDef, getMode } from './utils';
 import { tagMessageRoles, updateMaxItemKey } from './messages';
 import { applyTheme } from './theme';
 import { loadFont } from './font';
-import { createFloatAvatars, setupScrollAvatar } from './avatars';
+import { createFloatAvatars, setupScrollAvatar, updateAvatarContent } from './avatars';
 import { setupKeyboard } from './navigation';
 import { createSwitcher } from './buttons';
 import { setupObservers } from './observers';
@@ -28,7 +28,8 @@ function init() {
     S.avatarAC = GM_getValue(S.K.AVATAR_AC, '#10a37f');
     S.avatarSize = GM_getValue(S.K.AVATAR_SIZE, 30);
     S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, '');
-    S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, '');
+    S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, 'https://www.deepseek.com/favicon.ico');
+    S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 12);
 
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
@@ -39,6 +40,18 @@ function init() {
 
     setTimeout(function () { tagMessageRoles(); updateMaxItemKey(); }, 800);
     setTimeout(function () { tagMessageRoles(); updateMaxItemKey(); }, 1800);
+
+    // 自动抓取页面中 DeepSeek 用户头像
+    setTimeout(function () {
+        if (!S.avatarUserImg) {
+            var userAv = document.querySelector('img[src*="static.deepseek.com/user-avatar"]');
+            if (userAv && userAv.src) {
+                S.avatarUserImg = userAv.src;
+                GM_setValue(S.K.AVATAR_UIMG, S.avatarUserImg);
+                updateAvatarContent();
+            }
+        }
+    }, 1500);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });

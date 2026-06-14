@@ -60,7 +60,8 @@ export var K = {
     AVATAR_AC: 'dse3_avac',
     AVATAR_SIZE: 'dse3_avsz',
     AVATAR_UIMG: 'dse3_avui',
-    AVATAR_AIMG: 'dse3_avai'
+    AVATAR_AIMG: 'dse3_avai',
+    AVATAR_GAP: 'dse3_avgp'
 };
 
 export var S = {
@@ -74,7 +75,8 @@ export var S = {
     fontSrc: 'system', fontName: '',
     avatarUName: '你', avatarAName: 'DeepSeek',
     avatarUC: '#5686fe', avatarAC: '#10a37f',
-    avatarSize: 30, avatarUserImg: '', avatarAIImg: '',
+    avatarSize: 30, avatarUserImg: '', avatarAIImg: 'https://www.deepseek.com/favicon.ico',
+    avatarGap: 12,
     currentMode: 'light', currentItemKey: 1, maxItemKey: 0,
     styleEl: null, fontLinkEl: null, panelRef: null,
     panelVisible: false, panelMode: 'light', activePanelTab: 'page',
