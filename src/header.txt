@@ -1,0 +1,13 @@
+// ==UserScript==
+// @name         DeepSeek Chat Enhancer
+// @namespace    https://chat.deepseek.com/
+// @version      4.0.0
+// @description  配色+字体+浮动头像+方向键跳转，模块化版本
+// @author       You
+// @match        https://chat.deepseek.com/*
+// @grant        GM_addStyle
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @run-at       document-end
+// ==/UserScript==

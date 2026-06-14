@@ -1,0 +1,80 @@
+export var DEF = {
+    light: {
+        '--dsw-alias-bg-base': '#f2f4f8',
+        '--dsw-alias-bg-layer-2': '#ffffff',
+        '--dsw-alias-border-l1': '#d0d5dd',
+        '--dsw-alias-border-l2': '#e0e4ea',
+        '--dsw-alias-label-primary': '#1a1a2e',
+        '--dsw-alias-label-secondary': '#6b7280',
+        '--dsw-alias-label-tertiary': '#9ca3af',
+        '--dsw-alias-brand-primary': '#5686fe',
+        '--dsw-alias-brand-text': '#5686fe',
+        '--dsw-alias-interactive-bg-hover': 'rgba(86,134,254,0.08)',
+        '--dsw-alias-interactive-bg-hover-solid': 'rgba(86,134,254,0.12)',
+        '--dsw-alias-markdown-inline-code': '#f0f4ff',
+        '--dsw-alias-markdown-code-block': '#f5f7ff',
+        '--dsw-alias-markdown-code-block-banner': '#eef1ff',
+        '--dsw-alias-markdown-citation': '#f0f4ff',
+        '--dsw-alias-markdown-tag': '#f0f4ff',
+        '--dsw-alias-label-caption': '#9ca3af',
+        '--dsw-alias-bg-overlay': 'rgba(0,0,0,0.06)'
+    },
+    dark: {
+        '--dsw-alias-bg-base': '#0f1419',
+        '--dsw-alias-bg-layer-2': '#1a1e25',
+        '--dsw-alias-border-l1': '#3a4050',
+        '--dsw-alias-border-l2': '#2a303c',
+        '--dsw-alias-label-primary': '#d1d5db',
+        '--dsw-alias-label-secondary': '#8b95a5',
+        '--dsw-alias-label-tertiary': '#606a7c',
+        '--dsw-alias-brand-primary': '#5686fe',
+        '--dsw-alias-brand-text': '#5686fe',
+        '--dsw-alias-interactive-bg-hover': 'rgba(86,134,254,0.12)',
+        '--dsw-alias-interactive-bg-hover-solid': 'rgba(86,134,254,0.18)',
+        '--dsw-alias-markdown-inline-code': '#1e2430',
+        '--dsw-alias-markdown-code-block': '#161b22',
+        '--dsw-alias-markdown-code-block-banner': '#1b1f28',
+        '--dsw-alias-markdown-citation': '#1e2430',
+        '--dsw-alias-markdown-tag': '#1e2430',
+        '--dsw-alias-label-caption': '#606a7c',
+        '--dsw-alias-bg-overlay': 'rgba(255,255,255,0.06)'
+    }
+};
+
+export var K = {
+    PAGE_ON: 'dse3_page',
+    BUBBLE_ON: 'dse3_bubble',
+    PAGE_COLORS: 'dse3_pc',
+    BUBBLE_COLORS: 'dse3_bc',
+    STRONG_ON: 'dse3_son',
+    STRONG_C: 'dse3_scol',
+    CODE_ON: 'dse3_con',
+    CODE_C: 'dse3_ccol',
+    FONT_ON: 'dse3_fon',
+    FONT_SRC: 'dse3_fsrc',
+    FONT_NAME: 'dse3_fname',
+    AVATAR_ON: 'dse3_avon',
+    AVATAR_UNAME: 'dse3_avun',
+    AVATAR_ANAME: 'dse3_avan',
+    AVATAR_UC: 'dse3_avuc',
+    AVATAR_AC: 'dse3_avac'
+};
+
+export var S = {
+    pageOn: false, bubbleOn: false,
+    strongOn: false, codeOn: false,
+    fontOn: false, avatarOn: false,
+    pageColors: null,
+    bubbleColors: { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' },
+    strongColors: { light: '#1a1a2e', dark: '#e5e7eb' },
+    codeColors: { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' },
+    fontSrc: 'system', fontName: '',
+    avatarUName: '你', avatarAName: 'DeepSeek',
+    avatarUC: '#5686fe', avatarAC: '#10a37f',
+    currentMode: 'light', currentItemKey: 1, maxItemKey: 0,
+    styleEl: null, fontLinkEl: null, panelRef: null,
+    panelVisible: false, panelMode: 'light', activePanelTab: 'page',
+    msgObserver: null, bodyObserver: null, routeTimer: null, updateTimer: null,
+    avatarUserEl: null, avatarAIEl: null, avatarRAF: null,
+    avatarScrollContainer: null, avatarScrollRetry: null
+};

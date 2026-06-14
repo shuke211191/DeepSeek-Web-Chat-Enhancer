@@ -1,0 +1,135 @@
+import { S, DEF } from './state';
+import { cloneObj, cloneDef, esc, getMode } from './utils';
+import { applyTheme } from './theme';
+import { loadFont } from './font';
+import { setAvatarState, applyAvatarSettings } from './avatars';
+import { applyAfter, updateUI } from './buttons';
+
+export function syncPanelMode() {
+    S.panelMode = getMode();
+    var panel = document.getElementById('dse-panel'); if (!panel) return;
+    var tabs = panel.querySelectorAll('.dse-mode-tab');
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', tabs[i].dataset.mode === S.panelMode);
+    renderPanelContent();
+}
+
+function bindToggle(id, cb) { var el = document.getElementById(id); if (!el) return; var n = el.cloneNode(true); el.parentNode.replaceChild(n, el); n.addEventListener('change', function () { cb(n.checked); }); }
+
+function rebindPanelToggles() {
+    bindToggle('dse-page-toggle', function (v) { S.pageOn = v; GM_setValue(S.K.PAGE_ON, v); applyAfter(); renderPanelContent(); });
+    bindToggle('dse-bubble-toggle', function (v) { S.bubbleOn = v; GM_setValue(S.K.BUBBLE_ON, v); applyAfter(); renderPanelContent(); });
+    bindToggle('dse-strong-toggle', function (v) { S.strongOn = v; GM_setValue(S.K.STRONG_ON, v); applyAfter(); renderPanelContent(); });
+    bindToggle('dse-code-toggle', function (v) { S.codeOn = v; GM_setValue(S.K.CODE_ON, v); applyAfter(); renderPanelContent(); });
+    bindToggle('dse-font-toggle', function (v) { S.fontOn = v; GM_setValue(S.K.FONT_ON, v); loadFont(); updateUI(); renderPanelContent(); });
+    bindToggle('dse-avatar-toggle', function (v) { setAvatarState(v); renderPanelContent(); });
+}
+
+export function renderPanelContent() {
+    var right = document.getElementById('dse-panel-right'); if (!right) return;
+    if (!S.pageColors[S.panelMode]) S.pageColors[S.panelMode] = cloneObj(DEF[S.panelMode]);
+
+    var html = '';
+    function colorRow(key, label, g) {
+        var val = g === 'bubble' ? S.bubbleColors[key] : g === 'strong' ? S.strongColors[key] : g === 'code' ? S.codeColors[key] : S.pageColors[S.panelMode][key];
+        return '<div class="dse-r"><label>' + label + '</label><input type="color" data-k="' + key + '" data-g="' + g + '" value="' + (val || '#000') + '"></div>';
+    }
+
+    if (S.activePanelTab === 'page') {
+        html += '<div class="dse-mode-tabs"><button class="dse-mode-tab' + (S.panelMode === 'light' ? ' on' : '') + '" data-mode="light">浅色模式</button><button class="dse-mode-tab' + (S.panelMode === 'dark' ? ' on' : '') + '" data-mode="dark">深色模式</button></div>';
+        var keys = ['--dsw-alias-bg-base','--dsw-alias-bg-layer-2','--dsw-alias-brand-primary','--dsw-alias-label-primary','--dsw-alias-label-secondary','--dsw-alias-label-tertiary','--dsw-alias-border-l1','--dsw-alias-border-l2'];
+        var labels = ['页面背景','表面/卡片','主题色','主文字','次文字','辅助文字','主边框','次边框'];
+        for (var pi = 0; pi < keys.length; pi++) html += colorRow(keys[pi], labels[pi], 'page');
+    } else if (S.activePanelTab === 'bubble') {
+        html += colorRow('userBg','用户气泡背景','bubble') + colorRow('userText','用户气泡文字','bubble') + colorRow('aiBgL','AI气泡背景(浅)','bubble') + colorRow('aiBgD','AI气泡背景(深)','bubble') + colorRow('aiTextL','AI气泡文字(浅)','bubble') + colorRow('aiTextD','AI气泡文字(深)','bubble');
+    } else if (S.activePanelTab === 'strongcode') {
+        html += '<div class="dse-toggler"><label class="tgl">自定义强调颜色</label><label class="dse-sw"><input id="dse-strong-toggle" type="checkbox"' + (S.strongOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div id="dse-strong-rows" style="' + (S.strongOn ? '' : 'display:none') + '">' + colorRow('light','强调色(浅)','strong') + colorRow('dark','强调色(深)','strong') + '</div>';
+        html += '<div class="dse-toggler"><label class="tgl">自定义行内代码</label><label class="dse-sw"><input id="dse-code-toggle" type="checkbox"' + (S.codeOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div id="dse-code-rows" style="' + (S.codeOn ? '' : 'display:none') + '">' + colorRow('bgL','代码背景(浅)','code') + colorRow('bgD','代码背景(深)','code') + colorRow('textL','代码文字(浅)','code') + colorRow('textD','代码文字(深)','code') + '</div>';
+    } else if (S.activePanelTab === 'font') {
+        html += '<div class="dse-r"><label>来源</label><select id="dse-font-src" class="dse-input"><option value="system"' + (S.fontSrc === 'system' ? ' selected' : '') + '>系统字体</option><option value="google"' + (S.fontSrc === 'google' ? ' selected' : '') + '>Google Fonts</option></select></div>';
+        html += '<div class="dse-r"><label>字体名称</label><input id="dse-font-name" class="dse-input" type="text" value="' + esc(S.fontName) + '"></div>';
+    } else if (S.activePanelTab === 'avatar') {
+        html += '<div class="dse-r"><label>你的名字</label><input id="dse-avatar-uname" class="dse-input" type="text" value="' + esc(S.avatarUName) + '"></div>';
+        html += '<div class="dse-r"><label>你的头像色</label><input type="color" data-k="avuc" data-g="avatar" value="' + S.avatarUC + '"></div>';
+        html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
+        html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
+    }
+    right.innerHTML = html;
+
+    var modeTabs = right.querySelectorAll('.dse-mode-tab');
+    for (var ti = 0; ti < modeTabs.length; ti++) {
+        (function (tab) { tab.addEventListener('click', function () { S.panelMode = tab.dataset.mode; renderPanelContent(); }); })(modeTabs[ti]);
+    }
+    rebindPanelToggles();
+}
+
+function selectPanelTab(name) {
+    S.activePanelTab = name;
+    var left = document.getElementById('dse-panel-left');
+    if (left) { var items = left.querySelectorAll('.dse-tab-item'); for (var i = 0; i < items.length; i++) items[i].classList.toggle('on', items[i].dataset.tab === name); }
+    renderPanelContent();
+}
+
+export function createPanel() {
+    var existing = document.getElementById('dse-panel'); if (existing) return existing;
+    var panel = document.createElement('div'); panel.id = 'dse-panel';
+    panel.innerHTML =
+        '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;display:flex;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}' +
+        '#dse-panel-left{flex-shrink:0;width:140px;padding:14px 0 14px 14px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}' +
+        '#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}' +
+        '#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}' +
+        '#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}' +
+        '#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}' +
+        '#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}' +
+        '#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}' +
+        '#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}' +
+        '#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:5px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}' +
+        '#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:30px;height:24px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}' +
+        '#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}' +
+        '#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}</style>' +
+        '<div id="dse-panel-left">' +
+        '<div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
+        '<div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
+        '<div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div>' +
+        '<div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
+        '<div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
+        '<button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
+    document.body.appendChild(panel);
+
+    panel.querySelectorAll('.dse-tab-item').forEach(function (item) {
+        item.addEventListener('click', function (e) { if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return; selectPanelTab(item.dataset.tab); });
+    });
+
+    panel.addEventListener('input', function (e) {
+        var inp = e.target; if (!inp.dataset.k) return;
+        var key = inp.dataset.k, val = inp.value, g = inp.dataset.g;
+        if (g === 'page') { if (!S.pageColors[S.panelMode]) S.pageColors[S.panelMode] = cloneObj(DEF[S.panelMode]); S.pageColors[S.panelMode][key] = val; GM_setValue(S.K.PAGE_COLORS, S.pageColors); }
+        else if (g === 'bubble') { S.bubbleColors[key] = val; GM_setValue(S.K.BUBBLE_COLORS, S.bubbleColors); }
+        else if (g === 'strong') { S.strongColors[key] = val; GM_setValue(S.K.STRONG_C, S.strongColors); }
+        else if (g === 'code') { S.codeColors[key] = val; GM_setValue(S.K.CODE_C, S.codeColors); }
+        else if (g === 'avatar') { if (key === 'avuc') { S.avatarUC = val; GM_setValue(S.K.AVATAR_UC, val); } else { S.avatarAC = val; GM_setValue(S.K.AVATAR_AC, val); } applyAvatarSettings(); return; }
+        if (S.pageOn && g === 'page' || S.bubbleOn && g === 'bubble' || g === 'strong' || g === 'code') applyTheme(getMode());
+    });
+
+    panel.addEventListener('change', function (e) {
+        if (e.target.id === 'dse-font-src') { S.fontSrc = e.target.value; GM_setValue(S.K.FONT_SRC, S.fontSrc); loadFont(); }
+        if (e.target.id === 'dse-font-name') { S.fontName = e.target.value; GM_setValue(S.K.FONT_NAME, S.fontName); loadFont(); }
+        if (e.target.id === 'dse-avatar-uname') { S.avatarUName = e.target.value || '你'; GM_setValue(S.K.AVATAR_UNAME, S.avatarUName); applyAvatarSettings(); }
+        if (e.target.id === 'dse-avatar-aname') { S.avatarAName = e.target.value || 'DeepSeek'; GM_setValue(S.K.AVATAR_ANAME, S.avatarAName); applyAvatarSettings(); }
+    });
+
+    panel.querySelector('.dse-rst').addEventListener('click', function () {
+        S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false; S.fontOn = false; S.avatarOn = false;
+        S.pageColors = cloneDef(DEF);
+        S.bubbleColors = { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' };
+        S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
+        S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
+        for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
+        syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); setAvatarState(false);
+    });
+
+    document.addEventListener('click', function (e) { if (!panel.contains(e.target) && !e.target.closest('#dse-panel-trigger')) { panel.style.display = 'none'; S.panelVisible = false; } });
+    selectPanelTab('page');
+    return panel;
+}
