@@ -215,7 +215,6 @@
 
             tagMessageRoles();
             updateMaxItemKey();
-            scheduleAvatarUpdate();
         }, delay || 250);
     }
 
@@ -444,6 +443,7 @@
     var avatarAIEl = null;
     var avatarRAF = null;
     var avatarScrollContainer = null;
+    var avatarScrollRetry = null;
 
     function createFloatAvatars() {
         if (avatarUserEl) return;
@@ -556,6 +556,7 @@
             msg.querySelector(".fbb737a4") ||
             msg.querySelector(".ds-markdown") ||
             msg.querySelector("p") ||
+            msg.firstElementChild ||
             msg
         );
     }
@@ -743,10 +744,24 @@
             avatarScrollContainer.addEventListener(
                 "scroll",
                 scheduleAvatarUpdate,
-                {
-                    passive: true,
-                },
+                { passive: true },
             );
+
+            // 滚动监听器挂载成功，停止轮询重试
+            if (avatarScrollRetry) {
+                clearInterval(avatarScrollRetry);
+                avatarScrollRetry = null;
+            }
+        } else if (!sc && !avatarScrollRetry) {
+            // 滚动容器尚未就绪，每秒重试挂载
+            avatarScrollRetry = setInterval(function () {
+                var sc2 = getScrollContainer();
+                if (sc2) {
+                    clearInterval(avatarScrollRetry);
+                    avatarScrollRetry = null;
+                    setupScrollAvatar();
+                }
+            }, 1000);
         }
 
         window.removeEventListener("resize", scheduleAvatarUpdate);
@@ -1444,7 +1459,6 @@
             loadFont();
             updateUI();
             setAvatarState(false);
-            updateAvatarContent();
         });
 
         document.addEventListener("click", function (e) {
