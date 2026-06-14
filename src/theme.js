@@ -1,4 +1,7 @@
 import { S, DEF } from './state';
+import { getMode } from './utils';
+import { tagMessageRoles } from './messages';
+import { updateUI } from './utils';
 
 export function buildPageCSS(mode) {
     var vars = S.pageColors[mode] || DEF[mode];
@@ -35,4 +38,8 @@ export function applyTheme(mode) {
     if (S.strongOn || S.codeOn) { document.body.classList.add('ds-enhancer-sc'); css += buildSCCSS(mode); }
     if (css) { S.styleEl = document.createElement('style'); S.styleEl.id = 'dse-css'; S.styleEl.textContent = css; document.head.appendChild(S.styleEl); }
     S.currentMode = mode;
+}
+
+export function applyAfter() {
+    applyTheme(getMode()); tagMessageRoles(); updateUI();
 }

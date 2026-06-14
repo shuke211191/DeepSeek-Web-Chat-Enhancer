@@ -1,23 +1,9 @@
 import { S } from './state';
-import { getScrollContainer, getMode } from './utils';
+import { getMode, updateUI } from './utils';
 import { tagMessageRoles } from './messages';
-import { applyTheme } from './theme';
+import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
-
-export function updateUI() {
-    var el = document.getElementById('dse-ui'); if (!el) return;
-    var anyOn = S.pageOn || S.bubbleOn || S.fontOn || S.avatarOn || S.strongOn || S.codeOn;
-    var btns = el.querySelectorAll('button');
-    for (var i = 0; i < btns.length; i++) {
-        var b = btns[i]; if (b.id === 'dse-dark-toggle') continue;
-        if (b.id === 'dse-panel-trigger') b.classList.toggle('on', anyOn);
-        else if (b.dataset.t === 'original') b.classList.toggle('on', !anyOn);
-    }
-}
-
-export function applyAfter() {
-    applyTheme(getMode()); tagMessageRoles(); updateUI();
-}
+import { createPanel, syncPanelMode } from './panel';
 
 export function createSwitcher() {
     if (document.getElementById('dse-ui')) return;
@@ -47,5 +33,3 @@ export function createSwitcher() {
     });
     updateUI();
 }
-
-import { createPanel, syncPanelMode } from './panel';

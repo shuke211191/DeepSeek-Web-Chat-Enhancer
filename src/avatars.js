@@ -1,6 +1,5 @@
 import { S } from './state';
-import { getScrollContainer, getMode } from './utils';
-import { updateUI } from './buttons';
+import { getScrollContainer, getMode, updateUI } from './utils';
 
 export var avatarUserEl = null; var avatarAIEl = null; var avatarRAF = null; var avatarScrollContainer = null; var avatarScrollRetry = null;
 

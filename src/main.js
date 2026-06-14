@@ -5,7 +5,7 @@ import { applyTheme } from './theme';
 import { loadFont } from './font';
 import { createFloatAvatars, setupScrollAvatar } from './avatars';
 import { setupKeyboard } from './navigation';
-import { createSwitcher, updateUI } from './buttons';
+import { createSwitcher } from './buttons';
 import { setupObservers } from './observers';
 
 function init() {

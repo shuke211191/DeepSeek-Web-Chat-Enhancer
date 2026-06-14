@@ -1,9 +1,8 @@
 import { S, DEF } from './state';
-import { cloneObj, cloneDef, esc, getMode } from './utils';
-import { applyTheme } from './theme';
+import { cloneObj, cloneDef, esc, getMode, updateUI } from './utils';
+import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
 import { setAvatarState, applyAvatarSettings } from './avatars';
-import { applyAfter, updateUI } from './buttons';
 
 export function syncPanelMode() {
     S.panelMode = getMode();

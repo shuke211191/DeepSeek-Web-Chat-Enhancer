@@ -12,3 +12,16 @@ export function isOurNode(node) {
 }
 
 export function findItemByKey(key) { return document.querySelector('[data-virtual-list-item-key="' + key + '"]'); }
+
+import { S } from './state';
+
+export function updateUI() {
+    var el = document.getElementById('dse-ui'); if (!el) return;
+    var anyOn = S.pageOn || S.bubbleOn || S.fontOn || S.avatarOn || S.strongOn || S.codeOn;
+    var btns = el.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+        var b = btns[i]; if (b.id === 'dse-dark-toggle') continue;
+        if (b.id === 'dse-panel-trigger') b.classList.toggle('on', anyOn);
+        else if (b.dataset.t === 'original') b.classList.toggle('on', !anyOn);
+    }
+}
