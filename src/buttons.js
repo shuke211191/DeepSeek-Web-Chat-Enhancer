@@ -21,8 +21,8 @@ export function createSwitcher() {
         }
         if (btn.id === 'dse-panel-trigger') {
             if (!S.panelRef) S.panelRef = createPanel();
-            if (S.panelRef.style.display === 'block') { S.panelRef.style.display = 'none'; S.panelVisible = false; }
-            else { syncPanelMode(); S.panelRef.style.display = 'block'; S.panelVisible = true; }
+            if (S.panelRef.style.display === 'flex') { S.panelRef.style.display = 'none'; S.panelVisible = false; }
+            else { syncPanelMode(); S.panelRef.style.display = 'flex'; S.panelVisible = true; }
         } else if (btn.dataset.t === 'original') {
             if (S.panelRef) S.panelRef.style.display = 'none';
             S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false;
