@@ -67,6 +67,10 @@ src/
 
 详细架构见 [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md)，开发指引见 [`AGENTS.md`](AGENTS.md)。
 
+## 注意
+
+请新建`sample`目录，在里面包含你保存的网页快照（在聊天页面用`Ctrl+S`保存的所有内容），以便AI读取页面实际架构。页面快照可能包含你的个人隐私，不要公开。
+
 ## 技术要点
 
 - **GM API 外部化**：`GM_getValue` / `GM_setValue` 由 Vite 构建时设为 Rollup external，Tampermonkey 运行时注入
