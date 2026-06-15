@@ -76,7 +76,11 @@ function clampNumber(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
 function getMessageContentBox(msg, role) {
     if (!msg) return null;
-    if (role === 'assistant') return msg.querySelector('.ds-assistant-message-main-content') || msg.querySelector('.ds-markdown') || msg;
+    if (role === 'assistant') {
+        var think = msg.querySelector('.ds-think-content');
+        if (think && think.getBoundingClientRect().height >= 4) return think;
+        return msg.querySelector('.ds-assistant-message-main-content') || msg.querySelector('.ds-markdown') || msg;
+    }
     return msg.querySelector('.fbb737a4') || msg.querySelector('.ds-markdown') || msg.querySelector('p') || msg.firstElementChild || msg;
 }
 
@@ -87,6 +91,7 @@ export function updateAvatarPositions() {
     var scrollRect = sc ? sc.getBoundingClientRect() : { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth, width: window.innerWidth, height: window.innerHeight };
     var viewport = { top: scrollRect.top, bottom: scrollRect.bottom, left: scrollRect.left, right: scrollRect.right, width: scrollRect.width || window.innerWidth, height: scrollRect.height || window.innerHeight };
     var clampTop = viewport.top + 26, clampBottom = viewport.bottom - 26;
+    var viewportCenter = (viewport.top + viewport.bottom) / 2;
     var msgs = document.querySelectorAll('.ds-message');
     var bestUser = null, bestAI = null, bestUserDist = Infinity, bestAIDist = Infinity;
 
@@ -97,7 +102,8 @@ export function updateAvatarPositions() {
         var visibleTop = Math.max(rect.top, viewport.top);
         var visibleBottom = Math.min(rect.bottom, viewport.bottom);
         if (visibleBottom <= visibleTop) continue;
-        var dist = Math.abs(visibleTop - viewport.top);
+        var msgCenter = (rect.top + rect.bottom) / 2;
+        var dist = Math.abs(msgCenter - viewportCenter);
         if (role === 'user') { if (dist < bestUserDist) { bestUserDist = dist; bestUser = msg; } }
         else if (role === 'assistant') { if (dist < bestAIDist) { bestAIDist = dist; bestAI = msg; } }
     }

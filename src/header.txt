@@ -13,4 +13,6 @@
 // @run-at       document-end
 // ==/UserScript==
 // 代码参考
+// 公式复制 - https://greasyfork.org/zh-CN/scripts/576764-deepseek-latex-copier-deepseek%E5%85%AC%E5%BC%8F%E5%A4%8D%E5%88%B6%E5%99%A8/code
 // 单窗口记事本 - https://greasyfork.org/zh-CN/scripts/557500-deepseek%E5%8D%95%E7%AA%97%E5%8F%A3%E8%AE%B0%E4%BA%8B%E6%9C%AC-v2-0/code
+// 折叠思考 - https://greasyfork.org/zh-CN/scripts/580006-deepseek%E9%BB%98%E8%AE%A4%E6%8A%98%E5%8F%A0%E6%80%9D%E8%80%83/code
