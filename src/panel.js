@@ -4,6 +4,7 @@ import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
 import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpdate } from './avatars';
 import { setupFormulaCopier } from './formula';
+import { setupThinkCollapse, resetThinkCollapse, stopThinkCollapse } from './think-collapse';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -25,6 +26,7 @@ function rebindPanelToggles() {
     bindToggle('dse-formula-toggle', function (v) { S.formulaOn = v; GM_setValue(S.K.FORMULA_ON, v); setupFormulaCopier(); renderPanelContent(); });
     bindToggle('dse-npbtn-toggle', function (v) { S.showNotepadBtn = v; GM_setValue(S.K.SHOW_NP_BTN, v); var b = document.getElementById('dse-notepad-trigger'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
     bindToggle('dse-darkbtn-toggle', function (v) { S.showDarkBtn = v; GM_setValue(S.K.SHOW_DARK_BTN, v); var b = document.getElementById('dse-dark-toggle'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
+    bindToggle('dse-think-toggle', function (v) { S.autoThinkOn = v; GM_setValue(S.K.AUTO_THINK_ON, v); if (v) setupThinkCollapse(); else stopThinkCollapse(); renderPanelContent(); });
 }
 
 function syncPanelLeftToggles() {
@@ -77,6 +79,11 @@ export function renderPanelContent() {
         html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">自动折叠思考块</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        if (S.autoThinkOn) {
+            html += '<div id="dse-think-rows"><div class="dse-r"><label>折叠模式</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === 'always' ? ' selected' : '') + '>始终折叠</option><option value="after_think"' + (S.autoThinkMode === 'after_think' ? ' selected' : '') + '>思考结束后折叠</option></select></div>';
+            html += '<div class="dse-r"' + (S.autoThinkMode !== 'after_think' ? ' style="display:none"' : '') + '><label>延迟 (ms)</label><input id="dse-think-delay" class="dse-input" type="number" min="0" max="10000" step="100" value="' + S.autoThinkDelay + '"></div></div>';
+        }
     }
     right.innerHTML = html;
 
@@ -85,6 +92,7 @@ export function renderPanelContent() {
         (function (tab) { tab.addEventListener('click', function (e) { e.stopPropagation(); S.panelMode = tab.dataset.mode; renderPanelContent(); }); })(modeTabs[ti]);
     }
     rebindPanelToggles();
+    syncPanelLeftToggles();
 }
 
 function selectPanelTab(name) {
@@ -145,6 +153,8 @@ export function createPanel() {
         if (e.target.id === 'dse-avatar-aimg') { S.avatarAIImg = e.target.value; GM_setValue(S.K.AVATAR_AIMG, S.avatarAIImg); applyAvatarSettings(); }
         if (e.target.id === 'dse-avatar-size') { S.avatarSize = parseInt(e.target.value, 10) || 30; GM_setValue(S.K.AVATAR_SIZE, S.avatarSize); applyAvatarSize(); var s = e.target.nextElementSibling; if (s) s.textContent = S.avatarSize + 'px'; }
         if (e.target.id === 'dse-avatar-gap') { S.avatarGap = parseInt(e.target.value, 10) || 12; GM_setValue(S.K.AVATAR_GAP, S.avatarGap); scheduleAvatarUpdate(); var g = e.target.nextElementSibling; if (g) g.textContent = S.avatarGap + 'px'; }
+        if (e.target.id === 'dse-think-mode') { S.autoThinkMode = e.target.value; GM_setValue(S.K.AUTO_THINK_MODE, S.autoThinkMode); renderPanelContent(); resetThinkCollapse(); }
+        if (e.target.id === 'dse-think-delay') { var v = parseInt(e.target.value, 10); S.autoThinkDelay = isNaN(v) || v < 0 ? 0 : Math.min(v, 10000); GM_setValue(S.K.AUTO_THINK_DELAY, S.autoThinkDelay); }
     });
 
     panel.querySelector('.dse-rst').addEventListener('click', function () {
@@ -154,6 +164,8 @@ export function createPanel() {
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
         S.formulaOn = false; S.showNotepadBtn = true; S.showDarkBtn = true;
+        S.autoThinkOn = false; S.autoThinkMode = 'always'; S.autoThinkDelay = 500;
+        stopThinkCollapse();
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
     });

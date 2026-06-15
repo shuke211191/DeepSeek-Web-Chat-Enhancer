@@ -9,6 +9,7 @@ import { createSwitcher } from './buttons';
 import { setupObservers } from './observers';
 import { setNotepadState } from './notepad';
 import { setupFormulaCopier } from './formula';
+import { setupThinkCollapse } from './think-collapse';
 
 function init() {
     // 从 GM 存储加载持久化状态
@@ -43,6 +44,10 @@ function init() {
     S.showNotepadBtn = GM_getValue(S.K.SHOW_NP_BTN, true);
     S.showDarkBtn = GM_getValue(S.K.SHOW_DARK_BTN, true);
 
+    S.autoThinkOn = GM_getValue(S.K.AUTO_THINK_ON, false);
+    S.autoThinkMode = GM_getValue(S.K.AUTO_THINK_MODE, 'always');
+    S.autoThinkDelay = GM_getValue(S.K.AUTO_THINK_DELAY, 500);
+
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();
@@ -50,8 +55,8 @@ function init() {
 
     // 恢复笔记面板状态
     if (S.notepadOpen) setNotepadState(true);
-    // 初始化公式复制
     setupFormulaCopier();
+    if (S.autoThinkOn) setupThinkCollapse();
 
     GM_addStyle('.ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}');
 

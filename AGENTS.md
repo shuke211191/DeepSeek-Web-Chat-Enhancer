@@ -1,6 +1,7 @@
 # AGENTS.md
 
 ## 构建
+- 构建前注意更新header.txt与ARCHITECTURE.md
 - `npm run build` — Vite 构建，输出 `dist/deepseek-enhancer.user.js`（安装到 Tampermonkey 的最终文件）
 - `npm run dev` — Vite dev（仅语法检查，无热更新）
 - 构建后语法检查：`node --check dist/deepseek-enhancer.user.js`
@@ -23,9 +24,6 @@
 ### 循环依赖
 - `buttons.js` → `panel.js` 是唯一允许的单向依赖
 - **禁止** `panel.js` 或 `avatars.js` 导入 `buttons.js`（`updateUI` 在 `utils.js`，`applyAfter` 在 `theme.js`）
-  
-### 更新文档
-- 架构更新后，更新ARCHITECTURE.md
 
 ## DOM 注意事项
 

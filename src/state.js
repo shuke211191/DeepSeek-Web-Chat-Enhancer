@@ -71,7 +71,10 @@ export var K = {
 
     FORMULA_ON: 'dse3_fmo',
     SHOW_NP_BTN: 'dse3_snb',
-    SHOW_DARK_BTN: 'dse3_sdb'
+    SHOW_DARK_BTN: 'dse3_sdb',
+    AUTO_THINK_ON: 'dse3_aton',
+    AUTO_THINK_MODE: 'dse3_atmd',
+    AUTO_THINK_DELAY: 'dse3_atdy'
 };
 
 export var S = {
@@ -98,7 +101,8 @@ export var S = {
     notepadX: 20, notepadY: 100,
     notepadPanel: null,
 
-    formulaOn: false, showNotepadBtn: true, showDarkBtn: true
+    formulaOn: false, showNotepadBtn: true, showDarkBtn: true,
+    autoThinkOn: false, autoThinkMode: 'always', autoThinkDelay: 500
 };
 
 S.K = K;

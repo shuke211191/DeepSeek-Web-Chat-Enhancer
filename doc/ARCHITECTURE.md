@@ -15,6 +15,9 @@ src/
 ├── panel.js        两列配置面板
 ├── buttons.js      浮动按钮 UI
 ├── observers.js    MutationObserver + 路由监听
+├── notepad.js      可拖拽笔记面板
+├── formula.js      LaTeX 公式双击复制
+├── think-collapse.js 思考块自动折叠系统
 └── header.txt      Tampermonkey 元数据块
 ```
 
@@ -84,6 +87,14 @@ src/
 - `setupRouteWatcher()` — 每秒检测 URL 变化（SPA 路由）
 - `setupObservers()` — 启动全部观察器
 
+### `think-collapse.js`
+- `setupThinkCollapse()` — 启动思考块自动折叠（body MutationObserver + 轮询）
+- `processAll()` — 遍历所有 `.ds-think-content`，根据模式折叠
+- `resetThinkCollapse()` — 模式/延迟变更时重置（清定时器 + 观察器 + 重处理）
+- `stopThinkCollapse()` — 停止折叠（断开 observer、清定时器）
+- 双模式：`always` 立即折叠 / `after_think` 等待状态文本"已思考"后延迟折叠
+- 全部使用稳定选择器 `.ds-think-content`，通过 DOM 树关系（`parentElement.firstElementChild`）定位头部，不依赖哈希类名
+
 ### `main.js`
 - 从 GM 存储加载持久化状态到 S
 - 初始化各子系统的启动顺序
@@ -116,5 +127,6 @@ main.js
   ├── panel.js ───── state, utils, theme, font, avatars, buttons
   ├── buttons.js ─── state, utils, messages, theme, font, panel
   ├── observers.js ─ state, utils, messages, theme, avatars, panel
+  ├── think-collapse.js ─ state
   └── header.txt
 ```
