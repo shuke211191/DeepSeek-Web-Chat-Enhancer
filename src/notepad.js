@@ -29,7 +29,6 @@ export function createNotepad() {
         '<span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span>' +
         '<div style="display:flex;gap:4px;">' +
         '<button class="np-btn" id="np-btn-new" title="新建">📄</button>' +
-        '<button class="np-btn" id="np-btn-min" title="最小化">➖</button>' +
         '<button class="np-btn" id="np-btn-dl" title="下载.md">📥</button>' +
         '<button class="np-btn" id="np-btn-close" title="关闭">✕</button>' +
         '</div></div>' +
@@ -161,10 +160,7 @@ export function createNotepad() {
     // ─── 事件绑定 ──────────────────────────────────────────────────
     panel.querySelector('#np-btn-close').addEventListener('click', function () {
         var f = getCurFile(); if (f) { f.content = textarea.value; f.updateTime = Date.now(); saveStorage(); }
-        setNotepadState(false);
-    });
-    panel.querySelector('#np-btn-min').addEventListener('click', function () {
-        if (S.notepadMinimized) { setNotepadMinimized(false); } else { setNotepadMinimized(true); }
+        toggleNotepad();
     });
     panel.querySelector('#np-btn-new').addEventListener('click', createFile);
     panel.querySelector('#np-btn-dl').addEventListener('click', downloadMd);
@@ -225,9 +221,13 @@ export function createNotepad() {
     var initFile = getCurFile();
     if (initFile) { textarea.value = initFile.content || ''; updateCharCount(); fileInfo.textContent = initFile.title; }
 
-    // 位置
-    panel.style.left = (S.notepadX || 20) + 'px';
-    panel.style.top = (S.notepadY || 100) + 'px';
+    // 位置 — 初始在 ds-virtual-list 左上角
+    var sc2 = getScrollContainer();
+    var b2 = sc2 ? sc2.getBoundingClientRect() : { left: 20, top: 100 };
+    S.notepadX = S.notepadX || b2.left + 8;
+    S.notepadY = S.notepadY || b2.top + 8;
+    panel.style.left = S.notepadX + 'px';
+    panel.style.top = S.notepadY + 'px';
 }
 
 export function setNotepadState(on) {
@@ -235,33 +235,9 @@ export function setNotepadState(on) {
     GM_setValue(S.K.NOTEPAD_OPEN, on);
     if (!S.notepadPanel) createNotepad();
     S.notepadPanel.style.display = on ? 'flex' : 'none';
-    if (!on && S.notepadMinimized) setNotepadMinimized(false);
 }
 
 export function toggleNotepad() {
     setNotepadState(!S.notepadOpen);
 }
 
-export function setNotepadMinimized(min) {
-    S.notepadMinimized = min;
-    GM_setValue(S.K.NOTEPAD_MIN, min);
-    if (!S.notepadPanel) return;
-    if (min) {
-        S.notepadPanel.style.height = '40px';
-        S.notepadPanel.querySelector('.np-body').style.display = 'none';
-        S.notepadPanel.nextElementSibling && S.notepadPanel.nextElementSibling.nodeName === 'DIV' && (S.notepadPanel.querySelector('.np-header + div + div').style.display = 'none');
-        var footer = S.notepadPanel.querySelector('.np-header + div + div + div') || S.notepadPanel.querySelector('div:last-child');
-        if (footer && footer.style.fontSize) footer.style.display = 'none';
-        // 简化：隐藏 body 和 footer
-        var body = S.notepadPanel.querySelector('.np-body');
-        if (body) body.style.display = 'none';
-        var last = S.notepadPanel.children[S.notepadPanel.children.length - 1];
-        if (last && last.tagName === 'DIV' && !last.className) last.style.display = 'none';
-    } else {
-        S.notepadPanel.style.height = '';
-        var body2 = S.notepadPanel.querySelector('.np-body');
-        if (body2) body2.style.display = '';
-        var last2 = S.notepadPanel.children[S.notepadPanel.children.length - 1];
-        if (last2 && last2.tagName === 'DIV' && !last2.className) last2.style.display = '';
-    }
-}

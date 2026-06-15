@@ -67,8 +67,7 @@ export var K = {
     NOTEPAD_FILES: 'dse3_npf',
     NOTEPAD_CUR: 'dse3_npc',
     NOTEPAD_X: 'dse3_npx',
-    NOTEPAD_Y: 'dse3_npy',
-    NOTEPAD_MIN: 'dse3_npm'
+    NOTEPAD_Y: 'dse3_npy'
 };
 
 export var S = {
@@ -92,7 +91,7 @@ export var S = {
     avatarScrollContainer: null, avatarScrollRetry: null,
 
     notepadOpen: false, notepadFiles: [], notepadCurId: null,
-    notepadX: 20, notepadY: 100, notepadMinimized: false,
+    notepadX: 20, notepadY: 100,
     notepadPanel: null
 };
 

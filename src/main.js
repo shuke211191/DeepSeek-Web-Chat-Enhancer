@@ -35,7 +35,6 @@ function init() {
     S.notepadOpen = GM_getValue(S.K.NOTEPAD_OPEN, false);
     S.notepadX = GM_getValue(S.K.NOTEPAD_X, 20);
     S.notepadY = GM_getValue(S.K.NOTEPAD_Y, 100);
-    S.notepadMinimized = GM_getValue(S.K.NOTEPAD_MIN, false);
     try { S.notepadFiles = JSON.parse(GM_getValue(S.K.NOTEPAD_FILES, '[]')); } catch (e) { S.notepadFiles = []; }
     S.notepadCurId = GM_getValue(S.K.NOTEPAD_CUR, null);
 

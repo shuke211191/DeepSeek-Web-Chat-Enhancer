@@ -81,8 +81,7 @@
     NOTEPAD_FILES: "dse3_npf",
     NOTEPAD_CUR: "dse3_npc",
     NOTEPAD_X: "dse3_npx",
-    NOTEPAD_Y: "dse3_npy",
-    NOTEPAD_MIN: "dse3_npm"
+    NOTEPAD_Y: "dse3_npy"
   };
   var S = {
     pageOn: false,
@@ -128,7 +127,6 @@
     notepadCurId: null,
     notepadX: 20,
     notepadY: 100,
-    notepadMinimized: false,
     notepadPanel: null
   };
   S.K = K;
@@ -874,7 +872,7 @@
     var panel = document.createElement("div");
     panel.id = "dse-notepad";
     panel.style.cssText = "position:fixed;width:320px;height:420px;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:99996;font-family:var(--dsw-font-family),system-ui,sans-serif;display:none;flex-direction:column;overflow:hidden;resize:both;min-width:220px;min-height:200px;";
-    panel.innerHTML = '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span><div style="display:flex;gap:4px;"><button class="np-btn" id="np-btn-new" title="新建">📄</button><button class="np-btn" id="np-btn-min" title="最小化">➖</button><button class="np-btn" id="np-btn-dl" title="下载.md">📥</button><button class="np-btn" id="np-btn-close" title="关闭">✕</button></div></div><div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;"><div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;"><option value="">选择文件...</option></select><button class="np-btn-sm" id="np-btn-rename" title="重命名">✏️</button><button class="np-btn-sm" id="np-btn-delete" title="删除">🗑️</button></div><textarea id="np-textarea" placeholder="在此记录..." style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea></div><div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;"><span id="np-char-count">字符: 0</span><span id="np-file-info"></span><span id="np-save-status">本地存储</span></div>';
+    panel.innerHTML = '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span><div style="display:flex;gap:4px;"><button class="np-btn" id="np-btn-new" title="新建">📄</button><button class="np-btn" id="np-btn-dl" title="下载.md">📥</button><button class="np-btn" id="np-btn-close" title="关闭">✕</button></div></div><div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;"><div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;"><option value="">选择文件...</option></select><button class="np-btn-sm" id="np-btn-rename" title="重命名">✏️</button><button class="np-btn-sm" id="np-btn-delete" title="删除">🗑️</button></div><textarea id="np-textarea" placeholder="在此记录..." style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea></div><div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;"><span id="np-char-count">字符: 0</span><span id="np-file-info"></span><span id="np-save-status">本地存储</span></div>';
     document.body.appendChild(panel);
     var style = document.createElement("style");
     style.id = "dse-np-style";
@@ -1011,14 +1009,7 @@
         f2.updateTime = Date.now();
         saveStorage();
       }
-      setNotepadState(false);
-    });
-    panel.querySelector("#np-btn-min").addEventListener("click", function() {
-      if (S.notepadMinimized) {
-        setNotepadMinimized(false);
-      } else {
-        setNotepadMinimized(true);
-      }
+      toggleNotepad();
     });
     panel.querySelector("#np-btn-new").addEventListener("click", createFile);
     panel.querySelector("#np-btn-dl").addEventListener("click", downloadMd);
@@ -1097,40 +1088,21 @@
       updateCharCount();
       fileInfo.textContent = initFile.title;
     }
-    panel.style.left = (S.notepadX || 20) + "px";
-    panel.style.top = (S.notepadY || 100) + "px";
+    var sc2 = getScrollContainer();
+    var b2 = sc2 ? sc2.getBoundingClientRect() : { left: 20, top: 100 };
+    S.notepadX = S.notepadX || b2.left + 8;
+    S.notepadY = S.notepadY || b2.top + 8;
+    panel.style.left = S.notepadX + "px";
+    panel.style.top = S.notepadY + "px";
   }
   function setNotepadState(on) {
     S.notepadOpen = on;
     GM_setValue(S.K.NOTEPAD_OPEN, on);
     if (!S.notepadPanel) createNotepad();
     S.notepadPanel.style.display = on ? "flex" : "none";
-    if (!on && S.notepadMinimized) setNotepadMinimized(false);
   }
   function toggleNotepad() {
     setNotepadState(!S.notepadOpen);
-  }
-  function setNotepadMinimized(min) {
-    S.notepadMinimized = min;
-    GM_setValue(S.K.NOTEPAD_MIN, min);
-    if (!S.notepadPanel) return;
-    if (min) {
-      S.notepadPanel.style.height = "40px";
-      S.notepadPanel.querySelector(".np-body").style.display = "none";
-      S.notepadPanel.nextElementSibling && S.notepadPanel.nextElementSibling.nodeName === "DIV" && (S.notepadPanel.querySelector(".np-header + div + div").style.display = "none");
-      var footer = S.notepadPanel.querySelector(".np-header + div + div + div") || S.notepadPanel.querySelector("div:last-child");
-      if (footer && footer.style.fontSize) footer.style.display = "none";
-      var body = S.notepadPanel.querySelector(".np-body");
-      if (body) body.style.display = "none";
-      var last = S.notepadPanel.children[S.notepadPanel.children.length - 1];
-      if (last && last.tagName === "DIV" && !last.className) last.style.display = "none";
-    } else {
-      S.notepadPanel.style.height = "";
-      var body2 = S.notepadPanel.querySelector(".np-body");
-      if (body2) body2.style.display = "";
-      var last2 = S.notepadPanel.children[S.notepadPanel.children.length - 1];
-      if (last2 && last2.tagName === "DIV" && !last2.className) last2.style.display = "";
-    }
   }
   function createSwitcher() {
     if (document.getElementById("dse-ui")) return;
@@ -1298,7 +1270,6 @@
     S.notepadOpen = GM_getValue(S.K.NOTEPAD_OPEN, false);
     S.notepadX = GM_getValue(S.K.NOTEPAD_X, 20);
     S.notepadY = GM_getValue(S.K.NOTEPAD_Y, 100);
-    S.notepadMinimized = GM_getValue(S.K.NOTEPAD_MIN, false);
     try {
       S.notepadFiles = JSON.parse(GM_getValue(S.K.NOTEPAD_FILES, "[]"));
     } catch (e) {
