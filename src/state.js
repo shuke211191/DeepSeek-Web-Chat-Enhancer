@@ -67,7 +67,11 @@ export var K = {
     NOTEPAD_FILES: 'dse3_npf',
     NOTEPAD_CUR: 'dse3_npc',
     NOTEPAD_X: 'dse3_npx',
-    NOTEPAD_Y: 'dse3_npy'
+    NOTEPAD_Y: 'dse3_npy',
+
+    FORMULA_ON: 'dse3_fmo',
+    SHOW_NP_BTN: 'dse3_snb',
+    SHOW_DARK_BTN: 'dse3_sdb'
 };
 
 export var S = {
@@ -92,7 +96,9 @@ export var S = {
 
     notepadOpen: false, notepadFiles: [], notepadCurId: null,
     notepadX: 20, notepadY: 100,
-    notepadPanel: null
+    notepadPanel: null,
+
+    formulaOn: false, showNotepadBtn: true, showDarkBtn: true
 };
 
 S.K = K;

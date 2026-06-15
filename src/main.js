@@ -8,6 +8,7 @@ import { setupKeyboard } from './navigation';
 import { createSwitcher } from './buttons';
 import { setupObservers } from './observers';
 import { setNotepadState } from './notepad';
+import { setupFormulaCopier } from './formula';
 
 function init() {
     // 从 GM 存储加载持久化状态
@@ -38,6 +39,10 @@ function init() {
     try { S.notepadFiles = JSON.parse(GM_getValue(S.K.NOTEPAD_FILES, '[]')); } catch (e) { S.notepadFiles = []; }
     S.notepadCurId = GM_getValue(S.K.NOTEPAD_CUR, null);
 
+    S.formulaOn = GM_getValue(S.K.FORMULA_ON, false);
+    S.showNotepadBtn = GM_getValue(S.K.SHOW_NP_BTN, true);
+    S.showDarkBtn = GM_getValue(S.K.SHOW_DARK_BTN, true);
+
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();
@@ -45,6 +50,8 @@ function init() {
 
     // 恢复笔记面板状态
     if (S.notepadOpen) setNotepadState(true);
+    // 初始化公式复制
+    setupFormulaCopier();
 
     GM_addStyle('.ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}');
 

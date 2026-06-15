@@ -23,6 +23,9 @@
 ### 循环依赖
 - `buttons.js` → `panel.js` 是唯一允许的单向依赖
 - **禁止** `panel.js` 或 `avatars.js` 导入 `buttons.js`（`updateUI` 在 `utils.js`，`applyAfter` 在 `theme.js`）
+  
+### 更新文档
+- 架构更新后，更新ARCHITECTURE.md
 
 ## DOM 注意事项
 

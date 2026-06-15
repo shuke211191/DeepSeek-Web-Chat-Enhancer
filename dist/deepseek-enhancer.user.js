@@ -12,6 +12,8 @@
 // @grant        GM_deleteValue
 // @run-at       document-end
 // ==/UserScript==
+// 代码参考
+// 单窗口记事本 - https://greasyfork.org/zh-CN/scripts/557500-deepseek%E5%8D%95%E7%AA%97%E5%8F%A3%E8%AE%B0%E4%BA%8B%E6%9C%AC-v2-0/code
 (function() {
   "use strict";
   var DEF = {
@@ -81,7 +83,10 @@
     NOTEPAD_FILES: "dse3_npf",
     NOTEPAD_CUR: "dse3_npc",
     NOTEPAD_X: "dse3_npx",
-    NOTEPAD_Y: "dse3_npy"
+    NOTEPAD_Y: "dse3_npy",
+    FORMULA_ON: "dse3_fmo",
+    SHOW_NP_BTN: "dse3_snb",
+    SHOW_DARK_BTN: "dse3_sdb"
   };
   var S = {
     pageOn: false,
@@ -127,7 +132,10 @@
     notepadCurId: null,
     notepadX: 20,
     notepadY: 100,
-    notepadPanel: null
+    notepadPanel: null,
+    formulaOn: false,
+    showNotepadBtn: true,
+    showDarkBtn: true
   };
   S.K = K;
   function cloneObj(o) {
@@ -623,6 +631,108 @@
       navigate(e.key === "ArrowLeft" ? "prev" : "next");
     }, true);
   }
+  var STYLE_ID = "dse-formula-style";
+  function setupFormulaCopier() {
+    if (S.formulaOn) {
+      enableFormula();
+    } else {
+      disableFormula();
+    }
+  }
+  function enableFormula() {
+    if (!document.getElementById(STYLE_ID)) {
+      var s = document.createElement("style");
+      s.id = STYLE_ID;
+      s.textContent = '.katex{transition:background-color .3s,border-radius .3s;transition-delay:.1s;position:relative;}.katex:hover{background-color:rgba(86,134,254,.12)!important;border-radius:6px;cursor:pointer;}.katex-display:hover::after{content:"双击复制 LaTeX";position:absolute;right:0;top:-18px;font-size:11px;color:#9ca3af;pointer-events:none;opacity:.8;font-family:sans-serif;}.dse-formula-tip{position:fixed;background:rgba(30,30,30,.85);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-family:sans-serif;backdrop-filter:blur(4px);pointer-events:none;z-index:9999999;transform:translateY(10px) translateX(-50%);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .3s cubic-bezier(.25,.8,.25,1);}.dse-formula-tip.show{transform:translateY(0) translateX(-50%);opacity:1;}';
+      document.head.appendChild(s);
+    }
+    document.addEventListener("dblclick", onDblClick);
+    document.addEventListener("copy", onCopy, true);
+  }
+  function disableFormula() {
+    var s = document.getElementById(STYLE_ID);
+    if (s) s.remove();
+    document.removeEventListener("dblclick", onDblClick);
+    document.removeEventListener("copy", onCopy, true);
+  }
+  function showTip(msg, x, y) {
+    var t = document.createElement("div");
+    t.className = "dse-formula-tip";
+    t.textContent = msg;
+    if (x !== void 0) {
+      t.style.left = x + "px";
+      t.style.top = y - 30 + "px";
+    } else {
+      t.style.left = "50%";
+      t.style.bottom = "40px";
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function() {
+      t.classList.add("show");
+    });
+    setTimeout(function() {
+      t.classList.remove("show");
+      setTimeout(function() {
+        t.remove();
+      }, 300);
+    }, 1200);
+  }
+  function onDblClick(e) {
+    var kb = e.target.closest(".katex");
+    if (!kb) return;
+    window.getSelection().removeAllRanges();
+    var ann = kb.querySelector('annotation[encoding="application/x-tex"]');
+    if (!ann) return;
+    var tex = ann.textContent;
+    var isDisp = kb.classList.contains("katex-display") || kb.parentElement && kb.parentElement.classList.contains("katex-display");
+    var out = isDisp ? "\n$$ " + tex + " $$\n" : "$" + tex + "$";
+    navigator.clipboard.writeText(out).then(function() {
+      showTip("已复制 LaTeX", e.clientX, e.clientY);
+    }).catch(function() {
+    });
+  }
+  function onCopy(e) {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    var range = sel.getRangeAt(0);
+    function closestKatex(node) {
+      if (!node) return null;
+      var cur = node.nodeType === 3 ? node.parentElement : node;
+      while (cur && cur !== document.body) {
+        if (cur.classList && (cur.classList.contains("katex") || cur.classList.contains("katex-display"))) return cur;
+        cur = cur.parentElement;
+      }
+      return null;
+    }
+    var sk = closestKatex(range.startContainer);
+    if (sk) range.setStartBefore(sk);
+    var ek = closestKatex(range.endContainer);
+    if (ek) range.setEndAfter(ek);
+    var div = document.createElement("div");
+    div.appendChild(range.cloneContents());
+    var kns = Array.from(div.querySelectorAll(".katex"));
+    if (kns.length === 0) return;
+    e.preventDefault();
+    kns.forEach(function(katex) {
+      var ann = katex.querySelector('annotation[encoding="application/x-tex"]');
+      if (!ann) return;
+      var tex = ann.textContent;
+      var isDisp = katex.classList.contains("katex-display") || katex.parentElement && katex.parentElement.classList.contains("katex-display");
+      var rp = isDisp ? "\n$$ " + tex + " $$\n" : "$" + tex + "$";
+      var tn = document.createTextNode(rp);
+      if (isDisp && katex.parentElement && katex.parentElement.classList.contains("katex-display")) katex.parentElement.replaceWith(tn);
+      else katex.replaceWith(tn);
+    });
+    document.body.appendChild(div);
+    div.style.cssText = "position:fixed;left:-9999px;top:-9999px;white-space:pre-wrap;";
+    var clean = div.innerText;
+    document.body.removeChild(div);
+    if (e.clipboardData) {
+      e.clipboardData.setData("text/plain", clean);
+      e.clipboardData.setData("text/html", "<pre>" + clean + "</pre>");
+    }
+    showTip("已提取 LaTeX");
+  }
   function syncPanelMode() {
     S.panelMode = getMode();
     var panel = document.getElementById("dse-panel");
@@ -676,6 +786,28 @@
       setAvatarState(v);
       renderPanelContent();
     });
+    bindToggle("dse-formula-toggle", function(v) {
+      S.formulaOn = v;
+      GM_setValue(S.K.FORMULA_ON, v);
+      setupFormulaCopier();
+      renderPanelContent();
+    });
+    bindToggle("dse-npbtn-toggle", function(v) {
+      S.showNotepadBtn = v;
+      GM_setValue(S.K.SHOW_NP_BTN, v);
+      var b = document.getElementById("dse-notepad-trigger");
+      if (b) b.style.display = v ? "" : "none";
+      updateUI();
+      renderPanelContent();
+    });
+    bindToggle("dse-darkbtn-toggle", function(v) {
+      S.showDarkBtn = v;
+      GM_setValue(S.K.SHOW_DARK_BTN, v);
+      var b = document.getElementById("dse-dark-toggle");
+      if (b) b.style.display = v ? "" : "none";
+      updateUI();
+      renderPanelContent();
+    });
   }
   function renderPanelContent() {
     var right = document.getElementById("dse-panel-right");
@@ -710,6 +842,10 @@
       html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
       html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
       html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
+    } else if (S.activePanelTab === "other") {
+      html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -738,7 +874,7 @@
     if (existing) return existing;
     var panel = document.createElement("div");
     panel.id = "dse-panel";
-    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:5px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:30px;height:24px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div><div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
+    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:5px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:30px;height:24px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div><div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="other"><span>其他</span></div><button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
     panel.querySelectorAll(".dse-tab-item").forEach(function(item) {
       item.addEventListener("click", function(e) {
@@ -837,6 +973,9 @@
       S.avatarUserImg = "";
       S.avatarAIImg = "https://www.deepseek.com/favicon.ico";
       S.avatarGap = 32;
+      S.formulaOn = false;
+      S.showNotepadBtn = true;
+      S.showDarkBtn = true;
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -1109,7 +1248,7 @@
     if (document.getElementById("dse-ui")) return;
     var el = document.createElement("div");
     el.id = "dse-ui";
-    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-notepad-trigger" title="笔记">📝</button><button id="dse-dark-toggle" title="深色/浅色">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
+    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-notepad-trigger" title="笔记" style="' + (S.showNotepadBtn ? "" : "display:none;") + '">📝</button><button id="dse-dark-toggle" title="深色/浅色" style="' + (S.showDarkBtn ? "" : "display:none;") + '">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
     document.body.appendChild(el);
     el.addEventListener("click", function(e) {
       var btn = e.target.closest("button");
@@ -1150,6 +1289,7 @@
         tagMessageRoles();
         loadFont();
         updateUI();
+        if (S.panelVisible) renderPanelContent();
       } else if (btn.id === "dse-notepad-trigger") {
         toggleNotepad();
       }
@@ -1277,6 +1417,9 @@
       S.notepadFiles = [];
     }
     S.notepadCurId = GM_getValue(S.K.NOTEPAD_CUR, null);
+    S.formulaOn = GM_getValue(S.K.FORMULA_ON, false);
+    S.showNotepadBtn = GM_getValue(S.K.SHOW_NP_BTN, true);
+    S.showDarkBtn = GM_getValue(S.K.SHOW_DARK_BTN, true);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;
@@ -1289,6 +1432,7 @@
     createFloatAvatars();
     setupScrollAvatar();
     if (S.notepadOpen) setNotepadState(true);
+    setupFormulaCopier();
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
     setTimeout(function() {
       tagMessageRoles();

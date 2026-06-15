@@ -3,6 +3,7 @@ import { cloneObj, cloneDef, esc, getMode, updateUI } from './utils';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
 import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpdate } from './avatars';
+import { setupFormulaCopier } from './formula';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -21,6 +22,9 @@ function rebindPanelToggles() {
     bindToggle('dse-code-toggle', function (v) { S.codeOn = v; GM_setValue(S.K.CODE_ON, v); applyAfter(); renderPanelContent(); });
     bindToggle('dse-font-toggle', function (v) { S.fontOn = v; GM_setValue(S.K.FONT_ON, v); loadFont(); updateUI(); renderPanelContent(); });
     bindToggle('dse-avatar-toggle', function (v) { setAvatarState(v); renderPanelContent(); });
+    bindToggle('dse-formula-toggle', function (v) { S.formulaOn = v; GM_setValue(S.K.FORMULA_ON, v); setupFormulaCopier(); renderPanelContent(); });
+    bindToggle('dse-npbtn-toggle', function (v) { S.showNotepadBtn = v; GM_setValue(S.K.SHOW_NP_BTN, v); var b = document.getElementById('dse-notepad-trigger'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
+    bindToggle('dse-darkbtn-toggle', function (v) { S.showDarkBtn = v; GM_setValue(S.K.SHOW_DARK_BTN, v); var b = document.getElementById('dse-dark-toggle'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
 }
 
 function syncPanelLeftToggles() {
@@ -69,6 +73,10 @@ export function renderPanelContent() {
         html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
         html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
         html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:100px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + 'px</span></div>';
+    } else if (S.activePanelTab === 'other') {
+        html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
     }
     right.innerHTML = html;
 
@@ -109,6 +117,7 @@ export function createPanel() {
         '<div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div>' +
         '<div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
         '<div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
+        '<div class="dse-tab-item" data-tab="other"><span>其他</span></div>' +
         '<button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
 
@@ -144,6 +153,7 @@ export function createPanel() {
         S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = '你'; S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
+        S.formulaOn = false; S.showNotepadBtn = true; S.showDarkBtn = true;
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
     });

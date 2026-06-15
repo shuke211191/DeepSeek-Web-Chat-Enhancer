@@ -4,13 +4,13 @@ import { tagMessageRoles } from './messages';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
 import { setAvatarState } from './avatars';
-import { createPanel, syncPanelMode } from './panel';
+import { createPanel, syncPanelMode, renderPanelContent } from './panel';
 import { toggleNotepad } from './notepad';
 
 export function createSwitcher() {
     if (document.getElementById('dse-ui')) return;
     var el = document.createElement('div'); el.id = 'dse-ui';
-    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-notepad-trigger" title="笔记">📝</button><button id="dse-dark-toggle" title="深色/浅色">' + (getMode() === 'dark' ? '☀' : '🌙') + '</button>';
+    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-notepad-trigger" title="笔记" style="' + (S.showNotepadBtn ? '' : 'display:none;') + '">📝</button><button id="dse-dark-toggle" title="深色/浅色" style="' + (S.showDarkBtn ? '' : 'display:none;') + '">' + (getMode() === 'dark' ? '☀' : '🌙') + '</button>';
     document.body.appendChild(el);
 
     el.addEventListener('click', function (e) {
@@ -31,6 +31,7 @@ export function createSwitcher() {
             GM_setValue(S.K.PAGE_ON, false); GM_setValue(S.K.BUBBLE_ON, false); GM_setValue(S.K.STRONG_ON, false); GM_setValue(S.K.CODE_ON, false); GM_setValue(S.K.FONT_ON, false);
             setAvatarState(false);
             applyTheme(getMode()); tagMessageRoles(); loadFont(); updateUI();
+            if (S.panelVisible) renderPanelContent();
         } else if (btn.id === 'dse-notepad-trigger') {
             toggleNotepad();
         }

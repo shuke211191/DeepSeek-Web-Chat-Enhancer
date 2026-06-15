@@ -12,3 +12,5 @@
 // @grant        GM_deleteValue
 // @run-at       document-end
 // ==/UserScript==
+// 代码参考
+// 单窗口记事本 - https://greasyfork.org/zh-CN/scripts/557500-deepseek%E5%8D%95%E7%AA%97%E5%8F%A3%E8%AE%B0%E4%BA%8B%E6%9C%AC-v2-0/code
