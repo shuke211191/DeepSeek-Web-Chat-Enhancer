@@ -30,7 +30,7 @@
 ### 稳定选择器 vs CSS Module 哈希
 | ✅ 稳定可用 | ❌ 哈希类，随部署变化 |
 |------------|---------------------|
-| `.ds-message`, `.ds-assistant-message-main-content`, `.ds-markdown` | `_63c77b1`, `d29f3d7d`, `fbb737a4` |
+| `.ds-message`, `.ds-assistant-message-main-content`, `.ds-markdown`, `.ds-think-content` | `_63c77b1`, `d29f3d7d`, `fbb737a4` |
 | `.ds-virtual-list`, `[data-virtual-list-item-key]` | `_2bd7b35`, `_9663006` |
 | `body.dark` | `_4f9bf79`, `_81e7b5e` |
 

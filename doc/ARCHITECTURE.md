@@ -18,6 +18,7 @@ src/
 ├── notepad.js      可拖拽笔记面板
 ├── formula.js      LaTeX 公式双击复制
 ├── think-collapse.js 思考块自动折叠系统
+├── user-collapse.js  用户消息自动折叠
 └── header.txt      Tampermonkey 元数据块
 ```
 
@@ -95,6 +96,13 @@ src/
 - 双模式：`always` 立即折叠 / `after_think` 等待状态文本"已思考"后延迟折叠
 - 全部使用稳定选择器 `.ds-think-content`，通过 DOM 树关系（`parentElement.firstElementChild`）定位头部，不依赖哈希类名
 
+### `user-collapse.js`
+- `setupUserCollapse()` — 启动用户消息自动折叠（body MutationObserver + 轮询）
+- `processAll()` — 遍历 `.ds-message[data-ds-role="user"]`，>5 行则插入折叠按钮
+- `stopUserCollapse()` — 关闭折叠（断开 observer、移除按钮、展开所有消息）
+- 动态测量 `line-height` 计算阈值，`max-height` 限制 + `overflow-y: auto` 支持折叠内滚动
+- 按钮 `position: sticky` 随内容滚动，hover 显示
+
 ### `main.js`
 - 从 GM 存储加载持久化状态到 S
 - 初始化各子系统的启动顺序
@@ -128,5 +136,6 @@ main.js
   ├── buttons.js ─── state, utils, messages, theme, font, panel
   ├── observers.js ─ state, utils, messages, theme, avatars, panel
   ├── think-collapse.js ─ state
+  ├── user-collapse.js ─ state
   └── header.txt
 ```

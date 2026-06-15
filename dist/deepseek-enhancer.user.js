@@ -91,7 +91,8 @@
     SHOW_DARK_BTN: "dse3_sdb",
     AUTO_THINK_ON: "dse3_aton",
     AUTO_THINK_MODE: "dse3_atmd",
-    AUTO_THINK_DELAY: "dse3_atdy"
+    AUTO_THINK_DELAY: "dse3_atdy",
+    AUTO_COLLAPSE_USER: "dse3_acu"
   };
   var S = {
     pageOn: false,
@@ -143,7 +144,8 @@
     showDarkBtn: true,
     autoThinkOn: false,
     autoThinkMode: "always",
-    autoThinkDelay: 500
+    autoThinkDelay: 500,
+    autoCollapseUser: false
   };
   S.K = K;
   function cloneObj(o) {
@@ -748,11 +750,11 @@
     showTip("已提取 LaTeX");
   }
   var THINK_SEL = ".ds-think-content";
-  var POLL_MS = 1e3;
-  var processed = /* @__PURE__ */ new WeakSet();
+  var POLL_MS$1 = 1e3;
+  var processed$1 = /* @__PURE__ */ new WeakSet();
   var pendingTimers = /* @__PURE__ */ new Map();
   var observedEls = /* @__PURE__ */ new Map();
-  var pollTimer = null;
+  var pollTimer$1 = null;
   var bodyObs = null;
   function findHeader(thinkContent) {
     var w = thinkContent.parentElement;
@@ -767,10 +769,10 @@
     return t.indexOf("已思考") !== -1 || t.indexOf("Thought") !== -1;
   }
   function doCollapse(thinkContent) {
-    if (processed.has(thinkContent)) return;
+    if (processed$1.has(thinkContent)) return;
     var header = findHeader(thinkContent);
     if (!header) return;
-    processed.add(thinkContent);
+    processed$1.add(thinkContent);
     header.click();
   }
   function scheduleCollapse(thinkContent) {
@@ -799,7 +801,7 @@
     observedEls.set(thinkContent, obs);
   }
   function processOne(thinkContent) {
-    if (processed.has(thinkContent)) return;
+    if (processed$1.has(thinkContent)) return;
     var header = findHeader(thinkContent);
     if (!header) return;
     if (S.autoThinkMode === "always") {
@@ -809,7 +811,7 @@
       watchCompletion(thinkContent, header);
     }
   }
-  function processAll() {
+  function processAll$1() {
     var list = document.querySelectorAll(THINK_SEL);
     for (var i = 0; i < list.length; i++) processOne(list[i]);
   }
@@ -822,16 +824,16 @@
       }
       bodyObs = null;
     }
-    bodyObs = new MutationObserver(processAll);
+    bodyObs = new MutationObserver(processAll$1);
     bodyObs.observe(document.body, { childList: true, subtree: true });
-    processAll();
-    if (pollTimer) clearTimeout(pollTimer);
+    processAll$1();
+    if (pollTimer$1) clearTimeout(pollTimer$1);
     function poll() {
       if (!S.autoThinkOn) return;
-      processAll();
-      pollTimer = setTimeout(poll, POLL_MS);
+      processAll$1();
+      pollTimer$1 = setTimeout(poll, POLL_MS$1);
     }
-    pollTimer = setTimeout(poll, 3e3);
+    pollTimer$1 = setTimeout(poll, 3e3);
   }
   function resetThinkCollapse() {
     pendingTimers.forEach(function(t) {
@@ -845,8 +847,8 @@
       }
     });
     observedEls = /* @__PURE__ */ new Map();
-    processed = /* @__PURE__ */ new WeakSet();
-    processAll();
+    processed$1 = /* @__PURE__ */ new WeakSet();
+    processAll$1();
   }
   function stopThinkCollapse() {
     if (bodyObs) {
@@ -856,9 +858,9 @@
       }
       bodyObs = null;
     }
-    if (pollTimer) {
-      clearTimeout(pollTimer);
-      pollTimer = null;
+    if (pollTimer$1) {
+      clearTimeout(pollTimer$1);
+      pollTimer$1 = null;
     }
     pendingTimers.forEach(function(t) {
       clearTimeout(t);
@@ -871,6 +873,106 @@
       }
     });
     observedEls = /* @__PURE__ */ new Map();
+    processed$1 = /* @__PURE__ */ new WeakSet();
+  }
+  var MAX_LINES = 5;
+  var POLL_MS = 1e3;
+  var processed = /* @__PURE__ */ new WeakSet();
+  var observer = null;
+  var pollTimer = null;
+  function getUserBubble(msg) {
+    if (msg.dataset.dsRole !== "user") return null;
+    var b = msg.firstElementChild;
+    return b && b.textContent ? b : null;
+  }
+  function countLines(bubble) {
+    var style = getComputedStyle(bubble);
+    var lh = parseFloat(style.lineHeight) || 24;
+    return Math.ceil(bubble.scrollHeight / lh);
+  }
+  function addFoldButton(bubble) {
+    if (processed.has(bubble)) return;
+    processed.add(bubble);
+    var lines = countLines(bubble);
+    if (lines <= MAX_LINES) return;
+    bubble.classList.add("dse-usr-bubble");
+    var style = getComputedStyle(bubble);
+    var lh = parseFloat(style.lineHeight) || 24;
+    var pt = parseFloat(style.paddingTop) || 0;
+    var pb = parseFloat(style.paddingBottom) || 0;
+    bubble._dseLineH = lh;
+    bubble._dsePad = pt + pb;
+    var maxH = lh * MAX_LINES + pt + pb;
+    bubble.classList.add("dse-usr-folded");
+    bubble.style.maxHeight = maxH + "px";
+    var btn = document.createElement("button");
+    btn.className = "dse-usr-fold-btn";
+    btn.innerHTML = "▾";
+    btn.title = "折叠/展开";
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      if (bubble.classList.contains("dse-usr-folded")) {
+        bubble.classList.remove("dse-usr-folded");
+        bubble.style.maxHeight = "";
+        btn.innerHTML = "▴";
+      } else {
+        bubble.classList.add("dse-usr-folded");
+        bubble.style.maxHeight = bubble._dseLineH * MAX_LINES + bubble._dsePad + "px";
+        btn.innerHTML = "▾";
+      }
+    });
+    bubble.appendChild(btn);
+  }
+  function processAll() {
+    var msgs = document.querySelectorAll('.ds-message[data-ds-role="user"]');
+    for (var i = 0; i < msgs.length; i++) {
+      var bubble = getUserBubble(msgs[i]);
+      if (bubble) addFoldButton(bubble);
+    }
+  }
+  function setupUserCollapse() {
+    if (!S.autoCollapseUser) return;
+    GM_addStyle(
+      ".dse-usr-folded{overflow-y:auto;}.dse-usr-fold-btn{position:sticky;bottom:4px;display:block;margin-left:auto;margin-right:12px;width:40px;height:40px;border:none;background:rgba(128,128,128,0.15);border-radius:12px;cursor:pointer;font-size:22px;line-height:40px;padding:0;text-align:center;color:var(--dsw-alias-label-secondary,#6b7280);opacity:0;transition:opacity .15s;z-index:1;}.dse-usr-bubble:hover .dse-usr-fold-btn{opacity:1;}.dse-usr-fold-btn:hover{opacity:1!important;background:rgba(128,128,128,0.35);}"
+    );
+    if (observer) {
+      try {
+        observer.disconnect();
+      } catch (e) {
+      }
+    }
+    observer = new MutationObserver(processAll);
+    observer.observe(document.body, { childList: true, subtree: true });
+    processAll();
+    if (pollTimer) clearTimeout(pollTimer);
+    function poll() {
+      if (!S.autoCollapseUser) return;
+      processAll();
+      pollTimer = setTimeout(poll, POLL_MS);
+    }
+    pollTimer = setTimeout(poll, 3e3);
+  }
+  function stopUserCollapse() {
+    if (observer) {
+      try {
+        observer.disconnect();
+      } catch (e) {
+      }
+      observer = null;
+    }
+    if (pollTimer) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    var btns = document.querySelectorAll(".dse-usr-fold-btn");
+    for (var i = 0; i < btns.length; i++) btns[i].remove();
+    var folded = document.querySelectorAll(".dse-usr-folded");
+    for (var j = 0; j < folded.length; j++) {
+      folded[j].classList.remove("dse-usr-folded");
+      folded[j].style.maxHeight = "";
+    }
+    var bubbles = document.querySelectorAll(".dse-usr-bubble");
+    for (var k = 0; k < bubbles.length; k++) bubbles[k].classList.remove("dse-usr-bubble");
     processed = /* @__PURE__ */ new WeakSet();
   }
   function syncPanelMode() {
@@ -955,6 +1057,13 @@
       else stopThinkCollapse();
       renderPanelContent();
     });
+    bindToggle("dse-user-fold-toggle", function(v) {
+      S.autoCollapseUser = v;
+      GM_setValue(S.K.AUTO_COLLAPSE_USER, v);
+      if (v) setupUserCollapse();
+      else stopUserCollapse();
+      renderPanelContent();
+    });
   }
   function syncPanelLeftToggles() {
     var pageToggle = document.getElementById("dse-page-toggle");
@@ -1005,6 +1114,7 @@
       html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">自动折叠用户输入</label><label class="dse-sw"><input id="dse-user-fold-toggle" type="checkbox"' + (S.autoCollapseUser ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">自动折叠思考块</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       if (S.autoThinkOn) {
         html += '<div id="dse-think-rows"><div class="dse-r"><label>折叠模式</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === "always" ? " selected" : "") + '>始终折叠</option><option value="after_think"' + (S.autoThinkMode === "after_think" ? " selected" : "") + ">思考结束后折叠</option></select></div>";
@@ -1156,6 +1266,8 @@
       S.autoThinkMode = "always";
       S.autoThinkDelay = 500;
       stopThinkCollapse();
+      S.autoCollapseUser = false;
+      stopUserCollapse();
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -1468,6 +1580,9 @@
         S.autoThinkOn = false;
         GM_setValue(S.K.AUTO_THINK_ON, false);
         stopThinkCollapse();
+        S.autoCollapseUser = false;
+        GM_setValue(S.K.AUTO_COLLAPSE_USER, false);
+        stopUserCollapse();
         applyTheme(getMode());
         tagMessageRoles();
         loadFont();
@@ -1606,6 +1721,7 @@
     S.autoThinkOn = GM_getValue(S.K.AUTO_THINK_ON, false);
     S.autoThinkMode = GM_getValue(S.K.AUTO_THINK_MODE, "always");
     S.autoThinkDelay = GM_getValue(S.K.AUTO_THINK_DELAY, 500);
+    S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;
@@ -1620,6 +1736,7 @@
     if (S.notepadOpen) setNotepadState(true);
     setupFormulaCopier();
     if (S.autoThinkOn) setupThinkCollapse();
+    if (S.autoCollapseUser) setupUserCollapse();
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
     setTimeout(function() {
       tagMessageRoles();
