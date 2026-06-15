@@ -1,6 +1,7 @@
 node_modules/
-package-lock.json
 *.png
 *.json
 explore-dom.js
 sample/
+!package.json
+!package-lock.json
