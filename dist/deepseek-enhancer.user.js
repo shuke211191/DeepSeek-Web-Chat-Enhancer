@@ -76,7 +76,13 @@
     AVATAR_SIZE: "dse3_avsz",
     AVATAR_UIMG: "dse3_avui",
     AVATAR_AIMG: "dse3_avai",
-    AVATAR_GAP: "dse3_avgp"
+    AVATAR_GAP: "dse3_avgp",
+    NOTEPAD_OPEN: "dse3_npo",
+    NOTEPAD_FILES: "dse3_npf",
+    NOTEPAD_CUR: "dse3_npc",
+    NOTEPAD_X: "dse3_npx",
+    NOTEPAD_Y: "dse3_npy",
+    NOTEPAD_MIN: "dse3_npm"
   };
   var S = {
     pageOn: false,
@@ -116,7 +122,14 @@
     avatarAIEl: null,
     avatarRAF: null,
     avatarScrollContainer: null,
-    avatarScrollRetry: null
+    avatarScrollRetry: null,
+    notepadOpen: false,
+    notepadFiles: [],
+    notepadCurId: null,
+    notepadX: 20,
+    notepadY: 100,
+    notepadMinimized: false,
+    notepadPanel: null
   };
   S.K = K;
   function cloneObj(o) {
@@ -149,6 +162,7 @@
       var b = btns[i];
       if (b.id === "dse-dark-toggle") continue;
       if (b.id === "dse-panel-trigger") b.classList.toggle("on", anyOn);
+      else if (b.id === "dse-notepad-trigger") b.classList.toggle("on", S.notepadOpen);
       else if (b.dataset.t === "original") b.classList.toggle("on", !anyOn);
     }
   }
@@ -726,7 +740,7 @@
     if (existing) return existing;
     var panel = document.createElement("div");
     panel.id = "dse-panel";
-    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:14px 0 14px 14px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:5px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:30px;height:24px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div><div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
+    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:5px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:30px;height:24px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div><div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
     panel.querySelectorAll(".dse-tab-item").forEach(function(item) {
       item.addEventListener("click", function(e) {
@@ -850,11 +864,279 @@
     selectPanelTab("page");
     return panel;
   }
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+  function createNotepad() {
+    if (S.notepadPanel) return;
+    var container = getScrollContainer();
+    container ? container.getBoundingClientRect() : {};
+    var panel = document.createElement("div");
+    panel.id = "dse-notepad";
+    panel.style.cssText = "position:fixed;width:320px;height:420px;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:99996;font-family:var(--dsw-font-family),system-ui,sans-serif;display:none;flex-direction:column;overflow:hidden;resize:both;min-width:220px;min-height:200px;";
+    panel.innerHTML = '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span><div style="display:flex;gap:4px;"><button class="np-btn" id="np-btn-new" title="新建">📄</button><button class="np-btn" id="np-btn-min" title="最小化">➖</button><button class="np-btn" id="np-btn-dl" title="下载.md">📥</button><button class="np-btn" id="np-btn-close" title="关闭">✕</button></div></div><div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;"><div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;"><option value="">选择文件...</option></select><button class="np-btn-sm" id="np-btn-rename" title="重命名">✏️</button><button class="np-btn-sm" id="np-btn-delete" title="删除">🗑️</button></div><textarea id="np-textarea" placeholder="在此记录..." style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea></div><div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;"><span id="np-char-count">字符: 0</span><span id="np-file-info"></span><span id="np-save-status">本地存储</span></div>';
+    document.body.appendChild(panel);
+    var style = document.createElement("style");
+    style.id = "dse-np-style";
+    style.textContent = "#dse-notepad .np-btn{background:rgba(128,128,128,.1);border:1px solid transparent;border-radius:4px;color:var(--dsw-alias-label-primary);cursor:pointer;font-size:13px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;transition:background .15s;}#dse-notepad .np-btn:hover{background:rgba(128,128,128,.2);}#dse-notepad .np-btn-sm{background:rgba(128,128,128,.08);border:1px solid var(--dsw-alias-border-l1);border-radius:3px;cursor:pointer;font-size:11px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-secondary);flex-shrink:0;}#dse-notepad .np-btn-sm:hover{background:rgba(128,128,128,.15);}#dse-notepad textarea::-webkit-scrollbar{width:6px;}#dse-notepad textarea::-webkit-scrollbar-thumb{background:var(--dsw-alias-border-l1);border-radius:3px;}";
+    document.head.appendChild(style);
+    var fileSelect = panel.querySelector("#np-file-select");
+    var textarea = panel.querySelector("#np-textarea");
+    var charCount = panel.querySelector("#np-char-count");
+    var fileInfo = panel.querySelector("#np-file-info");
+    var saveStatus = panel.querySelector("#np-save-status");
+    var files = S.notepadFiles || [];
+    var curId = S.notepadCurId;
+    function saveStorage() {
+      try {
+        GM_setValue(S.K.NOTEPAD_FILES, JSON.stringify(files));
+      } catch (e) {
+      }
+      GM_setValue(S.K.NOTEPAD_CUR, curId);
+    }
+    function getCurFile() {
+      for (var i = 0; i < files.length; i++) {
+        if (files[i].id === curId) return files[i];
+      }
+      return null;
+    }
+    function refreshSelect() {
+      fileSelect.innerHTML = '<option value="">选择文件...</option>';
+      for (var i = 0; i < files.length; i++) {
+        var opt = document.createElement("option");
+        opt.value = files[i].id;
+        opt.textContent = files[i].title;
+        if (files[i].id === curId) opt.selected = true;
+        fileSelect.appendChild(opt);
+      }
+    }
+    function updateCharCount() {
+      charCount.textContent = "字符: " + textarea.value.length;
+    }
+    function saveFile() {
+      var f2 = getCurFile();
+      if (!f2) return;
+      f2.content = textarea.value;
+      f2.updateTime = Date.now();
+      saveStorage();
+      fileInfo.textContent = f2.title + " - " + new Date(f2.updateTime).toLocaleString();
+      saveStatus.textContent = "已保存";
+    }
+    function loadFile(f2) {
+      var prev = getCurFile();
+      if (prev && prev.id !== f2.id) {
+        prev.content = textarea.value;
+        prev.updateTime = Date.now();
+      }
+      curId = f2.id;
+      GM_setValue(S.K.NOTEPAD_CUR, curId);
+      S.notepadCurId = curId;
+      textarea.value = f2.content || "";
+      updateCharCount();
+      fileInfo.textContent = f2.title + " - " + new Date(f2.updateTime).toLocaleString();
+      refreshSelect();
+      saveStorage();
+    }
+    function createFile() {
+      var title = prompt("新文件标题:", "笔记");
+      if (!title) return;
+      var f2 = { id: Date.now().toString(), title, content: "", createTime: Date.now(), updateTime: Date.now() };
+      var prev = getCurFile();
+      if (prev) {
+        prev.content = textarea.value;
+        prev.updateTime = Date.now();
+      }
+      files.unshift(f2);
+      if (files.length > 30) files.length = 30;
+      curId = f2.id;
+      saveStorage();
+      S.notepadFiles = files;
+      S.notepadCurId = curId;
+      textarea.value = "";
+      refreshSelect();
+      updateCharCount();
+      fileInfo.textContent = f2.title;
+    }
+    function renameFile() {
+      var f2 = getCurFile();
+      if (!f2) return;
+      var t = prompt("新标题:", f2.title);
+      if (t && t !== f2.title) {
+        f2.title = t;
+        f2.updateTime = Date.now();
+        saveStorage();
+        refreshSelect();
+        fileInfo.textContent = t + " - " + new Date(f2.updateTime).toLocaleString();
+      }
+    }
+    function deleteFile() {
+      var f2 = getCurFile();
+      if (!f2) return;
+      if (!confirm('删除 "' + f2.title + '"？')) return;
+      files = files.filter(function(x) {
+        return x.id !== f2.id;
+      });
+      S.notepadFiles = files;
+      if (curId === f2.id) {
+        curId = files.length > 0 ? files[0].id : null;
+        S.notepadCurId = curId;
+      }
+      saveStorage();
+      refreshSelect();
+      if (curId) {
+        loadFile(files[0]);
+      } else {
+        textarea.value = "";
+        updateCharCount();
+        fileInfo.textContent = "";
+      }
+    }
+    function downloadMd() {
+      var f2 = getCurFile();
+      if (!f2) return;
+      var name = (f2.title || "note").replace(/[^\w\u4e00-\u9fa5]/g, "_") + ".md";
+      var blob = new Blob([f2.content || ""], { type: "text/markdown;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(function() {
+        URL.revokeObjectURL(a.href);
+      }, 200);
+    }
+    panel.querySelector("#np-btn-close").addEventListener("click", function() {
+      var f2 = getCurFile();
+      if (f2) {
+        f2.content = textarea.value;
+        f2.updateTime = Date.now();
+        saveStorage();
+      }
+      setNotepadState(false);
+    });
+    panel.querySelector("#np-btn-min").addEventListener("click", function() {
+      if (S.notepadMinimized) {
+        setNotepadMinimized(false);
+      } else {
+        setNotepadMinimized(true);
+      }
+    });
+    panel.querySelector("#np-btn-new").addEventListener("click", createFile);
+    panel.querySelector("#np-btn-dl").addEventListener("click", downloadMd);
+    panel.querySelector("#np-btn-rename").addEventListener("click", renameFile);
+    panel.querySelector("#np-btn-delete").addEventListener("click", deleteFile);
+    textarea.addEventListener("input", function() {
+      updateCharCount();
+      saveFile();
+    });
+    fileSelect.addEventListener("change", function() {
+      if (!fileSelect.value) return;
+      var targeted = null;
+      for (var i = 0; i < files.length; i++) {
+        if (files[i].id === fileSelect.value) {
+          targeted = files[i];
+          break;
+        }
+      }
+      if (targeted) loadFile(targeted);
+    });
+    var headerEl = panel.querySelector(".np-header");
+    var isDrag = false, sx = 0, sy = 0, ix = 0, iy = 0;
+    headerEl.addEventListener("mousedown", function(e) {
+      if (e.button !== 0) return;
+      isDrag = true;
+      sx = e.clientX;
+      sy = e.clientY;
+      ix = panel.offsetLeft;
+      iy = panel.offsetTop;
+      panel.style.transition = "none";
+      document.body.style.userSelect = "none";
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", function(e) {
+      if (!isDrag) return;
+      var bounds2 = (getScrollContainer() || { getBoundingClientRect: function() {
+        return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+      } }).getBoundingClientRect();
+      var nx = clamp(ix + e.clientX - sx, bounds2.left, bounds2.right - panel.offsetWidth);
+      var ny = clamp(iy + e.clientY - sy, bounds2.top, bounds2.bottom - 60);
+      panel.style.left = nx + "px";
+      panel.style.top = ny + "px";
+      S.notepadX = nx;
+      S.notepadY = ny;
+    });
+    document.addEventListener("mouseup", function() {
+      if (!isDrag) return;
+      isDrag = false;
+      panel.style.transition = "";
+      document.body.style.userSelect = "";
+      GM_setValue(S.K.NOTEPAD_X, S.notepadX);
+      GM_setValue(S.K.NOTEPAD_Y, S.notepadY);
+    });
+    panel._textarea = textarea;
+    panel._select = fileSelect;
+    panel._refreshSelect = refreshSelect;
+    panel._loadFile = loadFile;
+    panel._saveStorage = saveStorage;
+    panel._getCurFile = getCurFile;
+    panel._files = files;
+    S.notepadPanel = panel;
+    if (files.length === 0) {
+      var f = { id: "1", title: "笔记", content: "", createTime: Date.now(), updateTime: Date.now() };
+      files.push(f);
+      curId = "1";
+      S.notepadFiles = files;
+      S.notepadCurId = curId;
+      saveStorage();
+    }
+    S.notepadFiles = files;
+    S.notepadCurId = curId;
+    refreshSelect();
+    var initFile = getCurFile();
+    if (initFile) {
+      textarea.value = initFile.content || "";
+      updateCharCount();
+      fileInfo.textContent = initFile.title;
+    }
+    panel.style.left = (S.notepadX || 20) + "px";
+    panel.style.top = (S.notepadY || 100) + "px";
+  }
+  function setNotepadState(on) {
+    S.notepadOpen = on;
+    GM_setValue(S.K.NOTEPAD_OPEN, on);
+    if (!S.notepadPanel) createNotepad();
+    S.notepadPanel.style.display = on ? "flex" : "none";
+    if (!on && S.notepadMinimized) setNotepadMinimized(false);
+  }
+  function toggleNotepad() {
+    setNotepadState(!S.notepadOpen);
+  }
+  function setNotepadMinimized(min) {
+    S.notepadMinimized = min;
+    GM_setValue(S.K.NOTEPAD_MIN, min);
+    if (!S.notepadPanel) return;
+    if (min) {
+      S.notepadPanel.style.height = "40px";
+      S.notepadPanel.querySelector(".np-body").style.display = "none";
+      S.notepadPanel.nextElementSibling && S.notepadPanel.nextElementSibling.nodeName === "DIV" && (S.notepadPanel.querySelector(".np-header + div + div").style.display = "none");
+      var footer = S.notepadPanel.querySelector(".np-header + div + div + div") || S.notepadPanel.querySelector("div:last-child");
+      if (footer && footer.style.fontSize) footer.style.display = "none";
+      var body = S.notepadPanel.querySelector(".np-body");
+      if (body) body.style.display = "none";
+      var last = S.notepadPanel.children[S.notepadPanel.children.length - 1];
+      if (last && last.tagName === "DIV" && !last.className) last.style.display = "none";
+    } else {
+      S.notepadPanel.style.height = "";
+      var body2 = S.notepadPanel.querySelector(".np-body");
+      if (body2) body2.style.display = "";
+      var last2 = S.notepadPanel.children[S.notepadPanel.children.length - 1];
+      if (last2 && last2.tagName === "DIV" && !last2.className) last2.style.display = "";
+    }
+  }
   function createSwitcher() {
     if (document.getElementById("dse-ui")) return;
     var el = document.createElement("div");
     el.id = "dse-ui";
-    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-dark-toggle" title="深色/浅色">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
+    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">自</button><button id="dse-notepad-trigger" title="笔记">📝</button><button id="dse-dark-toggle" title="深色/浅色">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
     document.body.appendChild(el);
     el.addEventListener("click", function(e) {
       var btn = e.target.closest("button");
@@ -895,6 +1177,8 @@
         tagMessageRoles();
         loadFont();
         updateUI();
+      } else if (btn.id === "dse-notepad-trigger") {
+        toggleNotepad();
       }
       updateUI();
     });
@@ -1011,6 +1295,16 @@
     S.avatarUserImg = GM_getValue(S.K.AVATAR_UIMG, "");
     S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, "https://www.deepseek.com/favicon.ico");
     S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 32);
+    S.notepadOpen = GM_getValue(S.K.NOTEPAD_OPEN, false);
+    S.notepadX = GM_getValue(S.K.NOTEPAD_X, 20);
+    S.notepadY = GM_getValue(S.K.NOTEPAD_Y, 100);
+    S.notepadMinimized = GM_getValue(S.K.NOTEPAD_MIN, false);
+    try {
+      S.notepadFiles = JSON.parse(GM_getValue(S.K.NOTEPAD_FILES, "[]"));
+    } catch (e) {
+      S.notepadFiles = [];
+    }
+    S.notepadCurId = GM_getValue(S.K.NOTEPAD_CUR, null);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;
@@ -1022,6 +1316,7 @@
     loadFont();
     createFloatAvatars();
     setupScrollAvatar();
+    if (S.notepadOpen) setNotepadState(true);
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
     setTimeout(function() {
       tagMessageRoles();

@@ -22,6 +22,7 @@ export function updateUI() {
     for (var i = 0; i < btns.length; i++) {
         var b = btns[i]; if (b.id === 'dse-dark-toggle') continue;
         if (b.id === 'dse-panel-trigger') b.classList.toggle('on', anyOn);
+        else if (b.id === 'dse-notepad-trigger') b.classList.toggle('on', S.notepadOpen);
         else if (b.dataset.t === 'original') b.classList.toggle('on', !anyOn);
     }
 }

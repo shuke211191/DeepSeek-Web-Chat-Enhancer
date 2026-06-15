@@ -61,7 +61,14 @@ export var K = {
     AVATAR_SIZE: 'dse3_avsz',
     AVATAR_UIMG: 'dse3_avui',
     AVATAR_AIMG: 'dse3_avai',
-    AVATAR_GAP: 'dse3_avgp'
+    AVATAR_GAP: 'dse3_avgp',
+
+    NOTEPAD_OPEN: 'dse3_npo',
+    NOTEPAD_FILES: 'dse3_npf',
+    NOTEPAD_CUR: 'dse3_npc',
+    NOTEPAD_X: 'dse3_npx',
+    NOTEPAD_Y: 'dse3_npy',
+    NOTEPAD_MIN: 'dse3_npm'
 };
 
 export var S = {
@@ -82,7 +89,11 @@ export var S = {
     panelVisible: false, panelMode: 'light', activePanelTab: 'page',
     msgObserver: null, bodyObserver: null, routeTimer: null, updateTimer: null,
     avatarUserEl: null, avatarAIEl: null, avatarRAF: null,
-    avatarScrollContainer: null, avatarScrollRetry: null
+    avatarScrollContainer: null, avatarScrollRetry: null,
+
+    notepadOpen: false, notepadFiles: [], notepadCurId: null,
+    notepadX: 20, notepadY: 100, notepadMinimized: false,
+    notepadPanel: null
 };
 
 S.K = K;

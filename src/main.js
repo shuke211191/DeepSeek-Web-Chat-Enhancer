@@ -7,6 +7,7 @@ import { createFloatAvatars, setupScrollAvatar, updateAvatarContent } from './av
 import { setupKeyboard } from './navigation';
 import { createSwitcher } from './buttons';
 import { setupObservers } from './observers';
+import { setNotepadState } from './notepad';
 
 function init() {
     // 从 GM 存储加载持久化状态
@@ -31,10 +32,20 @@ function init() {
     S.avatarAIImg = GM_getValue(S.K.AVATAR_AIMG, 'https://www.deepseek.com/favicon.ico');
     S.avatarGap = GM_getValue(S.K.AVATAR_GAP, 32);
 
+    S.notepadOpen = GM_getValue(S.K.NOTEPAD_OPEN, false);
+    S.notepadX = GM_getValue(S.K.NOTEPAD_X, 20);
+    S.notepadY = GM_getValue(S.K.NOTEPAD_Y, 100);
+    S.notepadMinimized = GM_getValue(S.K.NOTEPAD_MIN, false);
+    try { S.notepadFiles = JSON.parse(GM_getValue(S.K.NOTEPAD_FILES, '[]')); } catch (e) { S.notepadFiles = []; }
+    S.notepadCurId = GM_getValue(S.K.NOTEPAD_CUR, null);
+
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();
     loadFont(); createFloatAvatars(); setupScrollAvatar();
+
+    // 恢复笔记面板状态
+    if (S.notepadOpen) setNotepadState(true);
 
     GM_addStyle('.ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}');
 
