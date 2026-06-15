@@ -1,6 +1,8 @@
-# DeepSeek Chat Enhancer
+# DeepSeek Web Chat Enhancer
 
 Tampermonkey 用户脚本，增强 [DeepSeek Chat](https://chat.deepseek.com) 的界面与交互体验。
+
+本项目完全由AI生成。
 
 ## 功能
 
