@@ -1,4 +1,4 @@
-# DeepSeek Chat Enhancer — 变更日志
+# DeepSeek Web Chat Enhancer — 变更日志
 
 ## v4.0.0 (2026-06-15)
 

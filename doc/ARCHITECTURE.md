@@ -1,4 +1,4 @@
-# DeepSeek Chat Enhancer — 模块文档
+# DeepSeek Web Chat Enhancer — 模块文档
 
 ## 架构概述
 
