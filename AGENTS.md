@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 构建
-- 构建前注意更新header.txt与ARCHITECTURE.md
+- 构建前注意更新header.txt、CHANGELOG.md与ARCHITECTURE.md
 - `npm run build` — Vite 构建，输出 `dist/deepseek-enhancer.user.js`（安装到 Tampermonkey 的最终文件）
 - `npm run dev` — Vite dev（仅语法检查，无热更新）
 - 构建后语法检查：`node --check dist/deepseek-enhancer.user.js`
