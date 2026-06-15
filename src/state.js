@@ -74,7 +74,9 @@ export var K = {
     SHOW_DARK_BTN: 'dse3_sdb',
     AUTO_THINK_ON: 'dse3_aton',
     AUTO_THINK_MODE: 'dse3_atmd',
-    AUTO_THINK_DELAY: 'dse3_atdy'
+    AUTO_THINK_DELAY: 'dse3_atdy',
+    AUTO_COLLAPSE_USER: 'dse3_acu',
+    FOCUS_INPUT_SHORTCUT: 'dse3_fis'
 };
 
 export var S = {
@@ -102,7 +104,9 @@ export var S = {
     notepadPanel: null,
 
     formulaOn: false, showNotepadBtn: true, showDarkBtn: true,
-    autoThinkOn: false, autoThinkMode: 'always', autoThinkDelay: 500
+    autoThinkOn: false, autoThinkMode: 'always', autoThinkDelay: 500,
+    autoCollapseUser: false,
+    focusInputShortcut: true
 };
 
 S.K = K;

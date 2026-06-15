@@ -43,6 +43,7 @@ export function navigate(dir) {
 export function setupKeyboard() {
     document.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.altKey && (e.key === '/' || e.code === 'Slash')) {
+            if (!S.focusInputShortcut) return;
             if (e.target && (e.target.closest('[role="dialog"]') || e.target.closest('[role="menu"]'))) return;
             e.preventDefault();
             var ta = document.querySelector('textarea'), sc = getScrollContainer();

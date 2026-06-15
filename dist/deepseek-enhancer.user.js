@@ -92,7 +92,8 @@
     AUTO_THINK_ON: "dse3_aton",
     AUTO_THINK_MODE: "dse3_atmd",
     AUTO_THINK_DELAY: "dse3_atdy",
-    AUTO_COLLAPSE_USER: "dse3_acu"
+    AUTO_COLLAPSE_USER: "dse3_acu",
+    FOCUS_INPUT_SHORTCUT: "dse3_fis"
   };
   var S = {
     pageOn: false,
@@ -145,7 +146,8 @@
     autoThinkOn: false,
     autoThinkMode: "always",
     autoThinkDelay: 500,
-    autoCollapseUser: false
+    autoCollapseUser: false,
+    focusInputShortcut: true
   };
   S.K = K;
   function cloneObj(o) {
@@ -624,6 +626,7 @@
   function setupKeyboard() {
     document.addEventListener("keydown", function(e) {
       if (e.ctrlKey && e.altKey && (e.key === "/" || e.code === "Slash")) {
+        if (!S.focusInputShortcut) return;
         if (e.target && (e.target.closest('[role="dialog"]') || e.target.closest('[role="menu"]'))) return;
         e.preventDefault();
         var ta = document.querySelector("textarea"), sc = getScrollContainer();
@@ -1064,6 +1067,10 @@
       else stopUserCollapse();
       renderPanelContent();
     });
+    bindToggle("dse-focus-toggle", function(v) {
+      S.focusInputShortcut = v;
+      GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v);
+    });
   }
   function syncPanelLeftToggles() {
     var pageToggle = document.getElementById("dse-page-toggle");
@@ -1115,6 +1122,7 @@
       html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">自动折叠用户输入</label><label class="dse-sw"><input id="dse-user-fold-toggle" type="checkbox"' + (S.autoCollapseUser ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">快速定位到输入框 (Ctrl+Alt+/)</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">自动折叠思考块</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       if (S.autoThinkOn) {
         html += '<div id="dse-think-rows"><div class="dse-r"><label>折叠模式</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === "always" ? " selected" : "") + '>始终折叠</option><option value="after_think"' + (S.autoThinkMode === "after_think" ? " selected" : "") + ">思考结束后折叠</option></select></div>";
@@ -1268,6 +1276,7 @@
       stopThinkCollapse();
       S.autoCollapseUser = false;
       stopUserCollapse();
+      S.focusInputShortcut = true;
       for (var kk in S.K) {
         if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
           try {
@@ -1583,6 +1592,8 @@
         S.autoCollapseUser = false;
         GM_setValue(S.K.AUTO_COLLAPSE_USER, false);
         stopUserCollapse();
+        S.focusInputShortcut = true;
+        GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, true);
         applyTheme(getMode());
         tagMessageRoles();
         loadFont();
@@ -1722,6 +1733,7 @@
     S.autoThinkMode = GM_getValue(S.K.AUTO_THINK_MODE, "always");
     S.autoThinkDelay = GM_getValue(S.K.AUTO_THINK_DELAY, 500);
     S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
+    S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;

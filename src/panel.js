@@ -5,6 +5,7 @@ import { loadFont } from './font';
 import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpdate } from './avatars';
 import { setupFormulaCopier } from './formula';
 import { setupThinkCollapse, resetThinkCollapse, stopThinkCollapse } from './think-collapse';
+import { setupUserCollapse, stopUserCollapse } from './user-collapse';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -27,6 +28,8 @@ function rebindPanelToggles() {
     bindToggle('dse-npbtn-toggle', function (v) { S.showNotepadBtn = v; GM_setValue(S.K.SHOW_NP_BTN, v); var b = document.getElementById('dse-notepad-trigger'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
     bindToggle('dse-darkbtn-toggle', function (v) { S.showDarkBtn = v; GM_setValue(S.K.SHOW_DARK_BTN, v); var b = document.getElementById('dse-dark-toggle'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
     bindToggle('dse-think-toggle', function (v) { S.autoThinkOn = v; GM_setValue(S.K.AUTO_THINK_ON, v); if (v) setupThinkCollapse(); else stopThinkCollapse(); renderPanelContent(); });
+    bindToggle('dse-user-fold-toggle', function (v) { S.autoCollapseUser = v; GM_setValue(S.K.AUTO_COLLAPSE_USER, v); if (v) setupUserCollapse(); else stopUserCollapse(); renderPanelContent(); });
+    bindToggle('dse-focus-toggle', function (v) { S.focusInputShortcut = v; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v); });
 }
 
 function syncPanelLeftToggles() {
@@ -81,6 +84,8 @@ export function renderPanelContent() {
         html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">自动折叠用户输入</label><label class="dse-sw"><input id="dse-user-fold-toggle" type="checkbox"' + (S.autoCollapseUser ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">快速定位到输入框 (Ctrl+Alt+/)</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">自动折叠思考块</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         if (S.autoThinkOn) {
             html += '<div id="dse-think-rows"><div class="dse-r"><label>折叠模式</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === 'always' ? ' selected' : '') + '>始终折叠</option><option value="after_think"' + (S.autoThinkMode === 'after_think' ? ' selected' : '') + '>思考结束后折叠</option></select></div>';
@@ -168,6 +173,8 @@ export function createPanel() {
         S.formulaOn = false; S.showNotepadBtn = true; S.showDarkBtn = true;
         S.autoThinkOn = false; S.autoThinkMode = 'always'; S.autoThinkDelay = 500;
         stopThinkCollapse();
+        S.autoCollapseUser = false; stopUserCollapse();
+        S.focusInputShortcut = true;
         for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
     });

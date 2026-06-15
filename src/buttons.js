@@ -7,6 +7,7 @@ import { setAvatarState } from './avatars';
 import { createPanel, syncPanelMode, renderPanelContent } from './panel';
 import { toggleNotepad } from './notepad';
 import { stopThinkCollapse } from './think-collapse';
+import { stopUserCollapse } from './user-collapse';
 
 export function createSwitcher() {
     if (document.getElementById('dse-ui')) return;
@@ -32,6 +33,8 @@ export function createSwitcher() {
             GM_setValue(S.K.PAGE_ON, false); GM_setValue(S.K.BUBBLE_ON, false); GM_setValue(S.K.STRONG_ON, false); GM_setValue(S.K.CODE_ON, false); GM_setValue(S.K.FONT_ON, false);
             setAvatarState(false);
             S.autoThinkOn = false; GM_setValue(S.K.AUTO_THINK_ON, false); stopThinkCollapse();
+            S.autoCollapseUser = false; GM_setValue(S.K.AUTO_COLLAPSE_USER, false); stopUserCollapse();
+            S.focusInputShortcut = true; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, true);
             applyTheme(getMode()); tagMessageRoles(); loadFont(); updateUI();
             if (S.panelVisible) renderPanelContent();
         } else if (btn.id === 'dse-notepad-trigger') {
