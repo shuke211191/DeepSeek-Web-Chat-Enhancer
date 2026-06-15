@@ -1,5 +1,5 @@
 import { S } from './state';
-import { getScrollContainer } from './utils';
+import { getScrollContainer, updateUI } from './utils';
 
 var NOTIFY_TIMER = null;
 
@@ -235,6 +235,7 @@ export function setNotepadState(on) {
     GM_setValue(S.K.NOTEPAD_OPEN, on);
     if (!S.notepadPanel) createNotepad();
     S.notepadPanel.style.display = on ? 'flex' : 'none';
+    updateUI();
 }
 
 export function toggleNotepad() {

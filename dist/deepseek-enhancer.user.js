@@ -1100,6 +1100,7 @@
     GM_setValue(S.K.NOTEPAD_OPEN, on);
     if (!S.notepadPanel) createNotepad();
     S.notepadPanel.style.display = on ? "flex" : "none";
+    updateUI();
   }
   function toggleNotepad() {
     setNotepadState(!S.notepadOpen);
