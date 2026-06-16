@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.2.0
-// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+高度限制+自动折叠，模块化版本
+// @version      4.3.0
+// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠，模块化版本
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*
@@ -96,6 +96,7 @@
     AUTO_COLLAPSE_USER: "dse3_acu",
     CODE_FOLD_ON: "dse3_cfon",
     CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
+    LANG: "dse3_lang",
     FOCUS_INPUT_SHORTCUT: "dse3_fis"
   };
   var S = {
@@ -152,6 +153,7 @@
     autoCollapseUser: false,
     codeFoldOn: false,
     codeBlockHeightOn: false,
+    lang: "auto",
     focusInputShortcut: true
   };
   S.K = K;
@@ -188,127 +190,6 @@
       else if (b.id === "dse-notepad-trigger") b.classList.toggle("on", S.notepadOpen);
       else if (b.dataset.t === "original") b.classList.toggle("on", !anyOn);
     }
-  }
-  function updateMaxItemKey() {
-    var items = document.querySelectorAll("[data-virtual-list-item-key]");
-    for (var i = 0; i < items.length; i++) {
-      var k = parseInt(items[i].dataset.virtualListItemKey, 10);
-      if (!isNaN(k) && k > S.maxItemKey) S.maxItemKey = k;
-    }
-  }
-  function collectMessages(root) {
-    var arr = [];
-    if (!root) root = document;
-    if (root instanceof Element && root.matches(".ds-message")) arr.push(root);
-    if (root.querySelectorAll) {
-      var list = root.querySelectorAll(".ds-message");
-      for (var i = 0; i < list.length; i++) arr.push(list[i]);
-    }
-    return arr;
-  }
-  function tagMessageRoles(root) {
-    var msgs = collectMessages(root);
-    for (var i = 0; i < msgs.length; i++) {
-      var msg = msgs[i];
-      if (msg.dataset.dsRole) continue;
-      var role = msg.querySelector(".ds-assistant-message-main-content") ? "assistant" : "user";
-      msg.dataset.dsRole = role;
-      var item = msg.closest("[data-virtual-list-item-key]");
-      if (item && !item.dataset.dsRole) item.dataset.dsRole = role;
-    }
-  }
-  function scheduleLightUpdate(delay) {
-    if (S.updateTimer) return;
-    S.updateTimer = setTimeout(function() {
-      S.updateTimer = null;
-      tagMessageRoles();
-      updateMaxItemKey();
-    }, delay || 250);
-  }
-  function buildPageCSS(mode) {
-    var vars = S.pageColors[mode] || DEF[mode];
-    var css = ".ds-enhancer-page {\n";
-    for (var k in vars) {
-      if (Object.prototype.hasOwnProperty.call(vars, k)) css += "  " + k + ": " + vars[k] + " !important;\n";
-    }
-    return css + "}\n";
-  }
-  function buildBubbleCSS(mode) {
-    var isDark = mode === "dark", bc = S.bubbleColors;
-    return [
-      '.ds-enhancer-bubble [data-ds-role="user"] { background:' + bc.userBg + " !important; color:" + bc.userText + " !important; }",
-      '.ds-enhancer-bubble [data-ds-role="user"] .fbb737a4,.ds-enhancer-bubble [data-ds-role="user"] p,.ds-enhancer-bubble [data-ds-role="user"] li,.ds-enhancer-bubble [data-ds-role="user"] h1,.ds-enhancer-bubble [data-ds-role="user"] h2,.ds-enhancer-bubble [data-ds-role="user"] h3,.ds-enhancer-bubble [data-ds-role="user"] h4{color:' + bc.userText + "!important;}",
-      '.ds-enhancer-bubble [data-ds-role="user"] a{color:' + bc.userText + "!important;text-decoration:underline!important;}",
-      '.ds-enhancer-bubble [data-ds-role="assistant"]{background:' + (isDark ? bc.aiBgD : bc.aiBgL) + "!important;color:" + (isDark ? bc.aiTextD : bc.aiTextL) + "!important;}",
-      '.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown p,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown li,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h1,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h2,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h3,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h4,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown em,.ds-enhancer-bubble [data-ds-role="assistant"] ._74c0879,.ds-enhancer-bubble [data-ds-role="assistant"] ._74c0879 *,.ds-enhancer-bubble [data-ds-role="assistant"] .dbe8cf4a{color:' + (isDark ? bc.aiTextD : bc.aiTextL) + "!important;}",
-      '.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown a{color:' + bc.userBg + "!important;}"
-    ].join("\n");
-  }
-  function buildSCCSS(mode) {
-    var isDark = mode === "dark", css = [];
-    if (S.strongOn) {
-      var sc = isDark ? S.strongColors.dark : S.strongColors.light;
-      css.push(".ds-enhancer-sc .ds-markdown strong{color:" + sc + "!important;}");
-    }
-    if (S.codeOn) {
-      var bg = isDark ? S.codeColors.bgD : S.codeColors.bgL, tc = isDark ? S.codeColors.textD : S.codeColors.textL;
-      css.push(".ds-enhancer-sc .ds-markdown code:not(.md-code-block code){background:" + bg + "!important;color:" + tc + "!important;}");
-    }
-    return css.join("\n");
-  }
-  function applyTheme(mode) {
-    if (S.styleEl) {
-      S.styleEl.remove();
-      S.styleEl = null;
-    }
-    document.body.classList.remove("ds-enhancer-page", "ds-enhancer-bubble", "ds-enhancer-sc");
-    var css = "";
-    if (S.pageOn) {
-      document.body.classList.add("ds-enhancer-page");
-      css += buildPageCSS(mode);
-    }
-    if (S.bubbleOn) {
-      document.body.classList.add("ds-enhancer-bubble");
-      css += buildBubbleCSS(mode);
-    }
-    if (S.strongOn || S.codeOn) {
-      document.body.classList.add("ds-enhancer-sc");
-      css += buildSCCSS(mode);
-    }
-    if (css) {
-      S.styleEl = document.createElement("style");
-      S.styleEl.id = "dse-css";
-      S.styleEl.textContent = css;
-      document.head.appendChild(S.styleEl);
-    }
-    S.currentMode = mode;
-  }
-  function applyAfter() {
-    applyTheme(getMode());
-    tagMessageRoles();
-    updateUI();
-  }
-  function loadFont() {
-    if (S.fontLinkEl) {
-      S.fontLinkEl.remove();
-      S.fontLinkEl = null;
-    }
-    document.body.classList.remove("ds-enhancer-font");
-    var old = document.getElementById("dse-font-style");
-    if (old) old.remove();
-    if (!S.fontOn || !S.fontName.trim()) return;
-    document.body.classList.add("ds-enhancer-font");
-    if (S.fontSrc === "google") {
-      S.fontLinkEl = document.createElement("link");
-      S.fontLinkEl.id = "dse-font-link";
-      S.fontLinkEl.rel = "stylesheet";
-      S.fontLinkEl.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(S.fontName.trim()).replace(/%20/g, "+") + "&display=swap";
-      document.head.appendChild(S.fontLinkEl);
-    }
-    var s = document.createElement("style");
-    s.id = "dse-font-style";
-    s.textContent = '.ds-enhancer-font .ds-markdown,.ds-enhancer-font textarea,.ds-enhancer-font .fbb737a4{font-family:"' + S.fontName.trim().replace(/"/g, '\\"') + '",var(--dsw-font-family),system-ui,sans-serif!important;}';
-    document.head.appendChild(s);
   }
   var avatarUserEl = null;
   var avatarAIEl = null;
@@ -396,8 +277,11 @@
     fill(avatarAIEl.querySelector(".dse-fav-circle"), avatarAIEl.querySelector(".dse-fav-name"), S.avatarAIImg, S.avatarAC, S.avatarAName);
   }
   function getRole(el) {
+    if (el.querySelector(".ds-assistant-message-main-content") || el.querySelector(".ds-think-content")) {
+      return "assistant";
+    }
     if (el.dataset.dsRole) return el.dataset.dsRole;
-    return el.querySelector(".ds-assistant-message-main-content") ? "assistant" : "user";
+    return "user";
   }
   function clampNumber(v, min, max) {
     return Math.max(min, Math.min(max, v));
@@ -409,7 +293,7 @@
       if (think && think.getBoundingClientRect().height >= 4) return think;
       return msg.querySelector(".ds-assistant-message-main-content") || msg.querySelector(".ds-markdown") || msg;
     }
-    return msg.querySelector(".fbb737a4") || msg.querySelector(".ds-markdown") || msg.querySelector("p") || msg.firstElementChild || msg;
+    return msg.querySelector(".ds-markdown") || msg.querySelector("p") || msg.firstElementChild || msg;
   }
   function updateAvatarPositions() {
     avatarRAF = null;
@@ -529,6 +413,131 @@
     window.removeEventListener("resize", scheduleAvatarUpdate);
     window.addEventListener("resize", scheduleAvatarUpdate, { passive: true });
     scheduleAvatarUpdate();
+  }
+  function updateMaxItemKey() {
+    var items = document.querySelectorAll("[data-virtual-list-item-key]");
+    for (var i = 0; i < items.length; i++) {
+      var k = parseInt(items[i].dataset.virtualListItemKey, 10);
+      if (!isNaN(k) && k > S.maxItemKey) S.maxItemKey = k;
+    }
+  }
+  function collectMessages(root) {
+    var arr = [];
+    if (!root) root = document;
+    if (root instanceof Element && root.matches(".ds-message")) arr.push(root);
+    if (root.querySelectorAll) {
+      var list = root.querySelectorAll(".ds-message");
+      for (var i = 0; i < list.length; i++) arr.push(list[i]);
+    }
+    return arr;
+  }
+  function tagMessageRoles(root) {
+    var msgs = collectMessages(root);
+    for (var i = 0; i < msgs.length; i++) {
+      var msg = msgs[i];
+      var role = msg.querySelector(".ds-assistant-message-main-content") || msg.querySelector(".ds-think-content") ? "assistant" : "user";
+      if (!msg.dataset.dsRole || msg.dataset.dsRole === "user" || role === "assistant") {
+        msg.dataset.dsRole = role;
+      }
+      var item = msg.closest("[data-virtual-list-item-key]");
+      if (item && (!item.dataset.dsRole || item.dataset.dsRole === "user" || role === "assistant")) {
+        item.dataset.dsRole = role;
+      }
+    }
+  }
+  function scheduleLightUpdate(delay) {
+    if (S.updateTimer) return;
+    S.updateTimer = setTimeout(function() {
+      S.updateTimer = null;
+      tagMessageRoles();
+      updateMaxItemKey();
+      scheduleAvatarUpdate();
+    }, delay || 250);
+  }
+  function buildPageCSS(mode) {
+    var vars = S.pageColors[mode] || DEF[mode];
+    var css = ".ds-enhancer-page {\n";
+    for (var k in vars) {
+      if (Object.prototype.hasOwnProperty.call(vars, k)) css += "  " + k + ": " + vars[k] + " !important;\n";
+    }
+    return css + "}\n";
+  }
+  function buildBubbleCSS(mode) {
+    var isDark = mode === "dark", bc = S.bubbleColors;
+    return [
+      '.ds-enhancer-bubble [data-ds-role="user"] { background:' + bc.userBg + " !important; color:" + bc.userText + " !important; }",
+      '.ds-enhancer-bubble [data-ds-role="user"] .fbb737a4,.ds-enhancer-bubble [data-ds-role="user"] p,.ds-enhancer-bubble [data-ds-role="user"] li,.ds-enhancer-bubble [data-ds-role="user"] h1,.ds-enhancer-bubble [data-ds-role="user"] h2,.ds-enhancer-bubble [data-ds-role="user"] h3,.ds-enhancer-bubble [data-ds-role="user"] h4{color:' + bc.userText + "!important;}",
+      '.ds-enhancer-bubble [data-ds-role="user"] a{color:' + bc.userText + "!important;text-decoration:underline!important;}",
+      '.ds-enhancer-bubble [data-ds-role="assistant"]{background:' + (isDark ? bc.aiBgD : bc.aiBgL) + "!important;color:" + (isDark ? bc.aiTextD : bc.aiTextL) + "!important;}",
+      '.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown p,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown li,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h1,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h2,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h3,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown h4,.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown em,.ds-enhancer-bubble [data-ds-role="assistant"] ._74c0879,.ds-enhancer-bubble [data-ds-role="assistant"] ._74c0879 *,.ds-enhancer-bubble [data-ds-role="assistant"] .dbe8cf4a{color:' + (isDark ? bc.aiTextD : bc.aiTextL) + "!important;}",
+      '.ds-enhancer-bubble [data-ds-role="assistant"] .ds-markdown a{color:' + bc.userBg + "!important;}"
+    ].join("\n");
+  }
+  function buildSCCSS(mode) {
+    var isDark = mode === "dark", css = [];
+    if (S.strongOn) {
+      var sc = isDark ? S.strongColors.dark : S.strongColors.light;
+      css.push(".ds-enhancer-sc .ds-markdown strong{color:" + sc + "!important;}");
+    }
+    if (S.codeOn) {
+      var bg = isDark ? S.codeColors.bgD : S.codeColors.bgL, tc = isDark ? S.codeColors.textD : S.codeColors.textL;
+      css.push(".ds-enhancer-sc .ds-markdown code:not(.md-code-block code){background:" + bg + "!important;color:" + tc + "!important;}");
+    }
+    return css.join("\n");
+  }
+  function applyTheme(mode) {
+    if (S.styleEl) {
+      S.styleEl.remove();
+      S.styleEl = null;
+    }
+    document.body.classList.remove("ds-enhancer-page", "ds-enhancer-bubble", "ds-enhancer-sc");
+    var css = "";
+    if (S.pageOn) {
+      document.body.classList.add("ds-enhancer-page");
+      css += buildPageCSS(mode);
+    }
+    if (S.bubbleOn) {
+      document.body.classList.add("ds-enhancer-bubble");
+      css += buildBubbleCSS(mode);
+    }
+    if (S.strongOn || S.codeOn) {
+      document.body.classList.add("ds-enhancer-sc");
+      css += buildSCCSS(mode);
+    }
+    if (css) {
+      S.styleEl = document.createElement("style");
+      S.styleEl.id = "dse-css";
+      S.styleEl.textContent = css;
+      document.head.appendChild(S.styleEl);
+    }
+    S.currentMode = mode;
+  }
+  function applyAfter() {
+    applyTheme(getMode());
+    tagMessageRoles();
+    updateUI();
+  }
+  function loadFont() {
+    if (S.fontLinkEl) {
+      S.fontLinkEl.remove();
+      S.fontLinkEl = null;
+    }
+    document.body.classList.remove("ds-enhancer-font");
+    var old = document.getElementById("dse-font-style");
+    if (old) old.remove();
+    if (!S.fontOn || !S.fontName.trim()) return;
+    document.body.classList.add("ds-enhancer-font");
+    if (S.fontSrc === "google") {
+      S.fontLinkEl = document.createElement("link");
+      S.fontLinkEl.id = "dse-font-link";
+      S.fontLinkEl.rel = "stylesheet";
+      S.fontLinkEl.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(S.fontName.trim()).replace(/%20/g, "+") + "&display=swap";
+      document.head.appendChild(S.fontLinkEl);
+    }
+    var s = document.createElement("style");
+    s.id = "dse-font-style";
+    s.textContent = '.ds-enhancer-font .ds-markdown,.ds-enhancer-font textarea,.ds-enhancer-font .fbb737a4{font-family:"' + S.fontName.trim().replace(/"/g, '\\"') + '",var(--dsw-font-family),system-ui,sans-serif!important;}';
+    document.head.appendChild(s);
   }
   function getVirtualItems() {
     var nodes = document.querySelectorAll("[data-virtual-list-item-key]"), arr = [];
@@ -655,6 +664,149 @@
       navigate(e.key === "ArrowLeft" ? "prev" : "next");
     }, true);
   }
+  var dict = {
+    // buttons.js
+    "原版": "Original",
+    "原": "Orig",
+    "自定义": "Settings",
+    "笔记": "Notes",
+    "深色/浅色": "Dark/Light",
+    // code-collapse.js
+    "折叠代码": "Fold Code",
+    "展开代码": "Unfold Code",
+    // formula.js
+    "双击复制 LaTeX": "Double-click to copy LaTeX",
+    "已复制 LaTeX": "LaTeX copied",
+    "已提取 LaTeX": "LaTeX extracted",
+    // notepad.js
+    "📝 笔记": "📝 Notes",
+    "新建": "New",
+    "下载.md": "Download .md",
+    "关闭": "Close",
+    "选择文件...": "Select file...",
+    "重命名": "Rename",
+    "删除": "Delete",
+    "在此记录...": "Type here...",
+    "字符: 0": "Chars: 0",
+    "字符: ": "Chars: ",
+    "本地存储": "Local Storage",
+    "已保存": "Saved",
+    "新文件标题:": "New file title:",
+    "新标题:": "New title:",
+    '删除 "': 'Delete "',
+    '"？': '"?',
+    // panel.js - tabs
+    "页面配色": "Page Colors",
+    "消息气泡": "Bubbles",
+    "强调/代码": "Emphasis/Code",
+    "字体": "Font",
+    "头像": "Avatar",
+    "语言": "Language",
+    "其他": "Other",
+    "恢复默认": "Reset",
+    // panel.js - page tab
+    "浅色模式": "Light Mode",
+    "深色模式": "Dark Mode",
+    "页面背景": "Page Bg",
+    "表面/卡片": "Surface/Card",
+    "主题色": "Accent",
+    "主文字": "Prim Text",
+    "次文字": "Sec Text",
+    "辅助文字": "Tert Text",
+    "主边框": "Border 1",
+    "次边框": "Border 2",
+    // panel.js - bubble tab
+    "用户气泡": "User Bubble",
+    "背景": "Bg",
+    "文字": "Text",
+    "AI气泡": "AI Bubble",
+    "背景(浅)": "Bg (Light)",
+    "背景(深)": "Bg (Dark)",
+    "文字(浅)": "Text (Light)",
+    "文字(深)": "Text (Dark)",
+    // panel.js - strongcode tab
+    "自定义强调颜色": "Custom Emphasis Color",
+    "浅色": "Light",
+    "深色": "Dark",
+    "自定义行内代码": "Custom Inline Code",
+    "启用代码块折叠": "Code Block Fold",
+    "限制代码块高度": "Code Block Height",
+    // panel.js - lang tab
+    "界面语言": "Language",
+    "自动": "Auto",
+    // panel.js - font tab
+    "来源": "Source",
+    "系统字体": "System Font",
+    "字体名称": "Font Name",
+    // panel.js - avatar tab
+    "你的头像色": "Your Avatar Color",
+    "你的名字": "Your Name",
+    "你的头像图": "Your Avatar Image",
+    "图片URL": "Image URL",
+    "AI头像色": "AI Avatar Color",
+    "AI名字": "AI Name",
+    "AI头像图": "AI Avatar Image",
+    "头像大小": "Avatar Size",
+    "头像间距": "Avatar Gap",
+    // panel.js - other tab
+    "显示笔记按钮": "Show Notes Button",
+    "显示深浅色切换按钮": "Show Dark Toggle",
+    "启用公式复制": "Formula Copy",
+    "自动折叠用户输入": "Auto-Fold User Input",
+    "自动折叠思考块": "Auto-Fold Think",
+    "折叠模式": "Fold Mode",
+    "始终折叠": "Always Fold",
+    "思考结束后折叠": "After Thinking",
+    "延迟 (ms)": "Delay (ms)",
+    "快速定位到输入框 (Ctrl+Alt+/)": "Focus Input (Ctrl+Alt+/)",
+    // user-collapse.js
+    "折叠/展开": "Fold/Unfold",
+    // default values
+    "你": "You"
+  };
+  function getLang() {
+    if (S.lang === "zh") return "zh";
+    if (S.lang === "en") return "en";
+    var navLang = (navigator.language || "").toLowerCase();
+    return navLang.startsWith("zh") ? "zh" : "en";
+  }
+  function t(str) {
+    if (getLang() === "en" && dict[str] !== void 0) return dict[str];
+    return str;
+  }
+  function refreshLang() {
+    var origBtn = document.querySelector('#dse-ui button[data-t="original"]');
+    if (origBtn) {
+      origBtn.title = t("原版");
+      origBtn.textContent = t("原");
+    }
+    var trig = document.getElementById("dse-panel-trigger");
+    if (trig) trig.title = t("自定义");
+    var npTrig = document.getElementById("dse-notepad-trigger");
+    if (npTrig) npTrig.title = t("笔记");
+    var darkBtn = document.getElementById("dse-dark-toggle");
+    if (darkBtn) darkBtn.title = t("深色/浅色");
+    var foldBtns = document.querySelectorAll(".dse-code-fold-btn");
+    for (var i = 0; i < foldBtns.length; i++) {
+      var b = foldBtns[i];
+      b.title = b.innerHTML === "▾" ? t("折叠代码") : t("展开代码");
+    }
+    var userFoldBtns = document.querySelectorAll(".dse-usr-fold-btn");
+    for (var j = 0; j < userFoldBtns.length; j++) {
+      userFoldBtns[j].title = t("折叠/展开");
+    }
+    var tabLabels = { page: "页面配色", bubble: "消息气泡", strongcode: "强调/代码", font: "字体", avatar: "头像", lang: "语言", other: "其他" };
+    var items = document.querySelectorAll("#dse-panel-left .dse-tab-item");
+    for (var k = 0; k < items.length; k++) {
+      var tab = items[k].dataset.tab;
+      if (tab && tabLabels[tab]) {
+        var span = items[k].querySelector("span");
+        if (span) span.textContent = t(tabLabels[tab]);
+      }
+    }
+    var rst = document.querySelector("#dse-panel-left .dse-rst");
+    if (rst) rst.textContent = t("恢复默认");
+  }
   var STYLE_ID = "dse-formula-style";
   function setupFormulaCopier() {
     if (S.formulaOn) {
@@ -667,7 +819,7 @@
     if (!document.getElementById(STYLE_ID)) {
       var s = document.createElement("style");
       s.id = STYLE_ID;
-      s.textContent = '.katex{transition:background-color .3s,border-radius .3s;transition-delay:.1s;position:relative;}.katex:hover{background-color:rgba(86,134,254,.12)!important;border-radius:6px;cursor:pointer;}.katex-display:hover::after{content:"双击复制 LaTeX";position:absolute;right:0;top:-18px;font-size:11px;color:#9ca3af;pointer-events:none;opacity:.8;font-family:sans-serif;}.dse-formula-tip{position:fixed;background:rgba(30,30,30,.85);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-family:sans-serif;backdrop-filter:blur(4px);pointer-events:none;z-index:9999999;transform:translateY(10px) translateX(-50%);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .3s cubic-bezier(.25,.8,.25,1);}.dse-formula-tip.show{transform:translateY(0) translateX(-50%);opacity:1;}';
+      s.textContent = '.katex{transition:background-color .3s,border-radius .3s;transition-delay:.1s;position:relative;}.katex:hover{background-color:rgba(86,134,254,.12)!important;border-radius:6px;cursor:pointer;}.katex-display:hover::after{content:"' + t("双击复制 LaTeX") + '";position:absolute;right:0;top:-18px;font-size:11px;color:#9ca3af;pointer-events:none;opacity:.8;font-family:sans-serif;}.dse-formula-tip{position:fixed;background:rgba(30,30,30,.85);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-family:sans-serif;backdrop-filter:blur(4px);pointer-events:none;z-index:9999999;transform:translateY(10px) translateX(-50%);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .3s cubic-bezier(.25,.8,.25,1);}.dse-formula-tip.show{transform:translateY(0) translateX(-50%);opacity:1;}';
       document.head.appendChild(s);
     }
     document.addEventListener("dblclick", onDblClick);
@@ -680,24 +832,24 @@
     document.removeEventListener("copy", onCopy, true);
   }
   function showTip(msg, x, y) {
-    var t = document.createElement("div");
-    t.className = "dse-formula-tip";
-    t.textContent = msg;
+    var t2 = document.createElement("div");
+    t2.className = "dse-formula-tip";
+    t2.textContent = msg;
     if (x !== void 0) {
-      t.style.left = x + "px";
-      t.style.top = y - 30 + "px";
+      t2.style.left = x + "px";
+      t2.style.top = y - 30 + "px";
     } else {
-      t.style.left = "50%";
-      t.style.bottom = "40px";
+      t2.style.left = "50%";
+      t2.style.bottom = "40px";
     }
-    document.body.appendChild(t);
+    document.body.appendChild(t2);
     requestAnimationFrame(function() {
-      t.classList.add("show");
+      t2.classList.add("show");
     });
     setTimeout(function() {
-      t.classList.remove("show");
+      t2.classList.remove("show");
       setTimeout(function() {
-        t.remove();
+        t2.remove();
       }, 300);
     }, 1200);
   }
@@ -711,7 +863,7 @@
     var isDisp = kb.classList.contains("katex-display") || kb.parentElement && kb.parentElement.classList.contains("katex-display");
     var out = isDisp ? "\n$$ " + tex + " $$\n" : "$" + tex + "$";
     navigator.clipboard.writeText(out).then(function() {
-      showTip("已复制 LaTeX", e.clientX, e.clientY);
+      showTip(t("已复制 LaTeX"), e.clientX, e.clientY);
     }).catch(function() {
     });
   }
@@ -755,7 +907,7 @@
       e.clipboardData.setData("text/plain", clean);
       e.clipboardData.setData("text/html", "<pre>" + clean + "</pre>");
     }
-    showTip("已提取 LaTeX");
+    showTip(t("已提取 LaTeX"));
   }
   var THINK_SEL = ".ds-think-content";
   var POLL_MS$2 = 1e3;
@@ -773,8 +925,8 @@
     return span ? span.textContent : "";
   }
   function isComplete(header) {
-    var t = statusText(header);
-    return t.indexOf("已思考") !== -1 || t.indexOf("Thought") !== -1;
+    var t2 = statusText(header);
+    return t2.indexOf("已思考") !== -1 || t2.indexOf("Thought") !== -1;
   }
   function doCollapse(thinkContent) {
     if (processed$1.has(thinkContent)) return;
@@ -844,8 +996,8 @@
     pollTimer$1 = setTimeout(poll, 3e3);
   }
   function resetThinkCollapse() {
-    pendingTimers.forEach(function(t) {
-      clearTimeout(t);
+    pendingTimers.forEach(function(t2) {
+      clearTimeout(t2);
     });
     pendingTimers = /* @__PURE__ */ new Map();
     observedEls.forEach(function(o) {
@@ -870,8 +1022,8 @@
       clearTimeout(pollTimer$1);
       pollTimer$1 = null;
     }
-    pendingTimers.forEach(function(t) {
-      clearTimeout(t);
+    pendingTimers.forEach(function(t2) {
+      clearTimeout(t2);
     });
     pendingTimers = /* @__PURE__ */ new Map();
     observedEls.forEach(function(o) {
@@ -916,7 +1068,7 @@
     var btn = document.createElement("button");
     btn.className = "dse-usr-fold-btn";
     btn.innerHTML = "▾";
-    btn.title = "折叠/展开";
+    btn.title = t("折叠/展开");
     btn.addEventListener("click", function(e) {
       e.stopPropagation();
       if (bubble.classList.contains("dse-usr-folded")) {
@@ -999,7 +1151,7 @@
     var container = firstBtn.parentElement;
     var btn = document.createElement("button");
     btn.className = "dse-code-fold-btn";
-    btn.title = "折叠代码";
+    btn.title = t("折叠代码");
     btn.innerHTML = "▾";
     var collapsed = false;
     btn.addEventListener("click", function(e) {
@@ -1007,12 +1159,12 @@
       if (collapsed) {
         pre.style.display = "";
         btn.innerHTML = "▾";
-        btn.title = "折叠代码";
+        btn.title = t("折叠代码");
         collapsed = false;
       } else {
         pre.style.display = "none";
         btn.innerHTML = "▸";
-        btn.title = "展开代码";
+        btn.title = t("展开代码");
         collapsed = true;
       }
     });
@@ -1235,51 +1387,53 @@
     var html = "";
     function colorRow(key, label, g) {
       var val = g === "bubble" ? S.bubbleColors[key] : g === "strong" ? S.strongColors[key] : g === "code" ? S.codeColors[key] : S.pageColors[S.panelMode][key];
-      return '<div class="dse-r"><label>' + label + '</label><input type="color" data-k="' + key + '" data-g="' + g + '" value="' + (val || "#000") + '"></div>';
+      return '<div class="dse-r"><label>' + t(label) + '</label><input type="color" data-k="' + key + '" data-g="' + g + '" value="' + (val || "#000") + '"></div>';
     }
     if (S.activePanelTab === "page") {
-      html += '<div class="dse-mode-tabs"><button class="dse-mode-tab' + (S.panelMode === "light" ? " on" : "") + '" data-mode="light">浅色模式</button><button class="dse-mode-tab' + (S.panelMode === "dark" ? " on" : "") + '" data-mode="dark">深色模式</button></div>';
+      html += '<div class="dse-mode-tabs"><button class="dse-mode-tab' + (S.panelMode === "light" ? " on" : "") + '" data-mode="light">' + t("浅色模式") + '</button><button class="dse-mode-tab' + (S.panelMode === "dark" ? " on" : "") + '" data-mode="dark">' + t("深色模式") + "</button></div>";
       html += '<div class="dse-grid">' + colorRow("--dsw-alias-bg-base", "页面背景", "page") + colorRow("--dsw-alias-bg-layer-2", "表面/卡片", "page") + colorRow("--dsw-alias-brand-primary", "主题色", "page") + "</div>";
       html += '<div class="dse-sep"></div><div class="dse-grid">' + colorRow("--dsw-alias-label-primary", "主文字", "page") + colorRow("--dsw-alias-label-secondary", "次文字", "page") + colorRow("--dsw-alias-label-tertiary", "辅助文字", "page") + "</div>";
       html += '<div class="dse-sep"></div><div class="dse-grid">' + colorRow("--dsw-alias-border-l1", "主边框", "page") + colorRow("--dsw-alias-border-l2", "次边框", "page") + "</div>";
     } else if (S.activePanelTab === "bubble") {
-      html += '<div class="dse-section-label">用户气泡</div><div class="dse-grid">' + colorRow("userBg", "背景", "bubble") + colorRow("userText", "文字", "bubble") + "</div>";
-      html += '<div class="dse-sep"></div><div class="dse-section-label">AI气泡</div><div class="dse-grid">' + colorRow("aiBgL", "背景(浅)", "bubble") + colorRow("aiBgD", "背景(深)", "bubble") + colorRow("aiTextL", "文字(浅)", "bubble") + colorRow("aiTextD", "文字(深)", "bubble") + "</div>";
+      html += '<div class="dse-section-label">' + t("用户气泡") + '</div><div class="dse-grid">' + colorRow("userBg", "背景", "bubble") + colorRow("userText", "文字", "bubble") + "</div>";
+      html += '<div class="dse-sep"></div><div class="dse-section-label">' + t("AI气泡") + '</div><div class="dse-grid">' + colorRow("aiBgL", "背景(浅)", "bubble") + colorRow("aiBgD", "背景(深)", "bubble") + colorRow("aiTextL", "文字(浅)", "bubble") + colorRow("aiTextD", "文字(深)", "bubble") + "</div>";
     } else if (S.activePanelTab === "strongcode") {
-      html += '<div class="dse-toggler"><label class="tgl">自定义强调颜色</label><label class="dse-sw"><input id="dse-strong-toggle" type="checkbox"' + (S.strongOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自定义强调颜色") + '</label><label class="dse-sw"><input id="dse-strong-toggle" type="checkbox"' + (S.strongOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div id="dse-strong-rows" style="' + (S.strongOn ? "" : "display:none") + '"><div class="dse-grid">' + colorRow("light", "浅色", "strong") + colorRow("dark", "深色", "strong") + "</div></div>";
-      html += '<div class="dse-toggler"><label class="tgl">自定义行内代码</label><label class="dse-sw"><input id="dse-code-toggle" type="checkbox"' + (S.codeOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自定义行内代码") + '</label><label class="dse-sw"><input id="dse-code-toggle" type="checkbox"' + (S.codeOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div id="dse-code-rows" style="' + (S.codeOn ? "" : "display:none") + '"><div class="dse-grid">' + colorRow("bgL", "背景(浅)", "code") + colorRow("bgD", "背景(深)", "code") + colorRow("textL", "文字(浅)", "code") + colorRow("textD", "文字(深)", "code") + "</div></div>";
       html += '<div class="dse-sep"></div>';
-      html += '<div class="dse-toggler"><label class="tgl">启用代码块折叠</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
-      html += '<div class="dse-toggler"><label class="tgl">限制代码块高度</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("启用代码块折叠") + '</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("限制代码块高度") + '</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+    } else if (S.activePanelTab === "lang") {
+      html += '<div class="dse-r"><label>' + t("界面语言") + '</label><select id="dse-lang" class="dse-input"><option value="auto"' + (S.lang === "auto" ? " selected" : "") + ">" + t("自动") + '</option><option value="zh"' + (S.lang === "zh" ? " selected" : "") + '>中文</option><option value="en"' + (S.lang === "en" ? " selected" : "") + ">English</option></select></div>";
     } else if (S.activePanelTab === "font") {
-      html += '<div class="dse-r"><label>来源</label><select id="dse-font-src" class="dse-input"><option value="system"' + (S.fontSrc === "system" ? " selected" : "") + '>系统字体</option><option value="google"' + (S.fontSrc === "google" ? " selected" : "") + ">Google Fonts</option></select></div>";
-      html += '<div class="dse-r"><label>字体名称</label><input id="dse-font-name" class="dse-input" type="text" value="' + esc(S.fontName) + '"></div>';
+      html += '<div class="dse-r"><label>' + t("来源") + '</label><select id="dse-font-src" class="dse-input"><option value="system"' + (S.fontSrc === "system" ? " selected" : "") + ">" + t("系统字体") + '</option><option value="google"' + (S.fontSrc === "google" ? " selected" : "") + ">Google Fonts</option></select></div>";
+      html += '<div class="dse-r"><label>' + t("字体名称") + '</label><input id="dse-font-name" class="dse-input" type="text" value="' + esc(S.fontName) + '"></div>';
     } else if (S.activePanelTab === "avatar") {
-      html += '<div class="dse-r"><label>你的头像色</label><input type="color" data-k="avuc" data-g="avatar" value="' + S.avatarUC + '"></div>';
-      html += '<div class="dse-r"><label>你的名字</label><input id="dse-avatar-uname" class="dse-input" type="text" value="' + esc(S.avatarUName) + '"></div>';
-      html += '<div class="dse-r"><label>你的头像图</label><input id="dse-avatar-uimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarUserImg) + '"></div>';
+      html += '<div class="dse-r"><label>' + t("你的头像色") + '</label><input type="color" data-k="avuc" data-g="avatar" value="' + S.avatarUC + '"></div>';
+      html += '<div class="dse-r"><label>' + t("你的名字") + '</label><input id="dse-avatar-uname" class="dse-input" type="text" value="' + esc(S.avatarUName) + '"></div>';
+      html += '<div class="dse-r"><label>' + t("你的头像图") + '</label><input id="dse-avatar-uimg" class="dse-input" type="text" placeholder="' + t("图片URL") + '" value="' + esc(S.avatarUserImg) + '"></div>';
       html += '<div class="dse-sep"></div>';
-      html += '<div class="dse-r"><label>AI头像色</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
-      html += '<div class="dse-r"><label>AI名字</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
-      html += '<div class="dse-r"><label>AI头像图</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="图片URL" value="' + esc(S.avatarAIImg) + '"></div>';
+      html += '<div class="dse-r"><label>' + t("AI头像色") + '</label><input type="color" data-k="avac" data-g="avatar" value="' + S.avatarAC + '"></div>';
+      html += '<div class="dse-r"><label>' + t("AI名字") + '</label><input id="dse-avatar-aname" class="dse-input" type="text" value="' + esc(S.avatarAName) + '"></div>';
+      html += '<div class="dse-r"><label>' + t("AI头像图") + '</label><input id="dse-avatar-aimg" class="dse-input" type="text" placeholder="' + t("图片URL") + '" value="' + esc(S.avatarAIImg) + '"></div>';
       html += '<div class="dse-sep"></div>';
-      html += '<div class="dse-r"><label>头像大小</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
-      html += '<div class="dse-r"><label>头像间距</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
+      html += '<div class="dse-r"><label>' + t("头像大小") + '</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
+      html += '<div class="dse-r"><label>' + t("头像间距") + '</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
     } else if (S.activePanelTab === "other") {
-      html += '<div class="dse-toggler"><label class="tgl">显示笔记按钮</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
-      html += '<div class="dse-toggler"><label class="tgl">显示深浅色切换按钮</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("显示笔记按钮") + '</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("显示深浅色切换按钮") + '</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-sep"></div>';
-      html += '<div class="dse-toggler"><label class="tgl">启用公式复制</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
-      html += '<div class="dse-toggler"><label class="tgl">自动折叠用户输入</label><label class="dse-sw"><input id="dse-user-fold-toggle" type="checkbox"' + (S.autoCollapseUser ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
-      html += '<div class="dse-toggler"><label class="tgl">自动折叠思考块</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("启用公式复制") + '</label><label class="dse-sw"><input id="dse-formula-toggle" type="checkbox"' + (S.formulaOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自动折叠用户输入") + '</label><label class="dse-sw"><input id="dse-user-fold-toggle" type="checkbox"' + (S.autoCollapseUser ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自动折叠思考块") + '</label><label class="dse-sw"><input id="dse-think-toggle" type="checkbox"' + (S.autoThinkOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       if (S.autoThinkOn) {
-        html += '<div id="dse-think-rows"><div class="dse-r"><label>折叠模式</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === "always" ? " selected" : "") + '>始终折叠</option><option value="after_think"' + (S.autoThinkMode === "after_think" ? " selected" : "") + ">思考结束后折叠</option></select></div>";
-        html += '<div class="dse-r"' + (S.autoThinkMode !== "after_think" ? ' style="display:none"' : "") + '><label>延迟 (ms)</label><input id="dse-think-delay" class="dse-input" type="number" min="0" max="10000" step="100" value="' + S.autoThinkDelay + '"></div></div>';
+        html += '<div id="dse-think-rows"><div class="dse-r"><label>' + t("折叠模式") + '</label><select id="dse-think-mode" class="dse-input"><option value="always"' + (S.autoThinkMode === "always" ? " selected" : "") + ">" + t("始终折叠") + '</option><option value="after_think"' + (S.autoThinkMode === "after_think" ? " selected" : "") + ">" + t("思考结束后折叠") + "</option></select></div>";
+        html += '<div class="dse-r"' + (S.autoThinkMode !== "after_think" ? ' style="display:none"' : "") + "><label>" + t("延迟 (ms)") + '</label><input id="dse-think-delay" class="dse-input" type="number" min="0" max="10000" step="100" value="' + S.autoThinkDelay + '"></div></div>';
       }
       html += '<div class="dse-sep"></div>';
-      html += '<div class="dse-toggler"><label class="tgl">快速定位到输入框 (Ctrl+Alt+/)</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("快速定位到输入框 (Ctrl+Alt+/)") + '</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -1309,7 +1463,7 @@
     if (existing) return existing;
     var panel = document.createElement("div");
     panel.id = "dse-panel";
-    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>页面配色</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>消息气泡</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>强调/代码</span></div><div class="dse-tab-item" data-tab="font"><span>字体</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>头像</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="other"><span>其他</span></div><div class="dse-sep"></div><button class="dse-rst">恢复默认</button></div><div id="dse-panel-right"></div>';
+    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>' + t("页面配色") + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>' + t("消息气泡") + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>' + t("强调/代码") + '</span></div><div class="dse-tab-item" data-tab="font"><span>' + t("字体") + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>' + t("头像") + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="lang"><span>' + t("语言") + '</span></div><div class="dse-tab-item" data-tab="other"><span>' + t("其他") + '</span></div><div class="dse-sep"></div><button class="dse-rst">' + t("恢复默认") + '</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
     panel.querySelectorAll(".dse-tab-item").forEach(function(item) {
       item.addEventListener("click", function(e) {
@@ -1359,7 +1513,7 @@
         loadFont();
       }
       if (e.target.id === "dse-avatar-uname") {
-        S.avatarUName = e.target.value || "你";
+        S.avatarUName = e.target.value || t("你");
         GM_setValue(S.K.AVATAR_UNAME, S.avatarUName);
         applyAvatarSettings();
       }
@@ -1403,6 +1557,12 @@
         S.autoThinkDelay = isNaN(v) || v < 0 ? 0 : Math.min(v, 1e4);
         GM_setValue(S.K.AUTO_THINK_DELAY, S.autoThinkDelay);
       }
+      if (e.target.id === "dse-lang") {
+        S.lang = e.target.value;
+        GM_setValue(S.K.LANG, S.lang);
+        refreshLang();
+        renderPanelContent();
+      }
     });
     panel.querySelector(".dse-rst").addEventListener("click", function() {
       S.pageColors = cloneDef(DEF);
@@ -1411,7 +1571,7 @@
       S.codeColors = { bgL: "#f0f4ff", bgD: "#1e2430", textL: "#5686fe", textD: "#8cb4ff" };
       S.fontSrc = "system";
       S.fontName = "";
-      S.avatarUName = "你";
+      S.avatarUName = t("你");
       S.avatarAName = "DeepSeek";
       S.avatarUC = "#5686fe";
       S.avatarAC = "#10a37f";
@@ -1464,7 +1624,7 @@
     var panel = document.createElement("div");
     panel.id = "dse-notepad";
     panel.style.cssText = "position:fixed;width:320px;height:420px;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:99996;font-family:var(--dsw-font-family),system-ui,sans-serif;display:none;flex-direction:column;overflow:hidden;resize:both;min-width:220px;min-height:200px;";
-    panel.innerHTML = '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span><div style="display:flex;gap:4px;"><button class="np-btn" id="np-btn-new" title="新建">📄</button><button class="np-btn" id="np-btn-dl" title="下载.md">📥</button><button class="np-btn" id="np-btn-close" title="关闭">✕</button></div></div><div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;"><div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;"><option value="">选择文件...</option></select><button class="np-btn-sm" id="np-btn-rename" title="重命名">✏️</button><button class="np-btn-sm" id="np-btn-delete" title="删除">🗑️</button></div><textarea id="np-textarea" placeholder="在此记录..." style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea></div><div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;"><span id="np-char-count">字符: 0</span><span id="np-file-info"></span><span id="np-save-status">本地存储</span></div>';
+    panel.innerHTML = '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">' + t("📝 笔记") + '</span><div style="display:flex;gap:4px;"><button class="np-btn" id="np-btn-new" title="' + t("新建") + '">📄</button><button class="np-btn" id="np-btn-dl" title="' + t("下载.md") + '">📥</button><button class="np-btn" id="np-btn-close" title="' + t("关闭") + '">✕</button></div></div><div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;"><div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);"><select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;"><option value="">' + t("选择文件...") + '</option></select><button class="np-btn-sm" id="np-btn-rename" title="' + t("重命名") + '">✏️</button><button class="np-btn-sm" id="np-btn-delete" title="' + t("删除") + '">🗑️</button></div><textarea id="np-textarea" placeholder="' + t("在此记录...") + '" style=..."flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea></div><div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;"><span id="np-char-count">' + t("字符: 0") + '</span><span id="np-file-info"></span><span id="np-save-status">' + t("本地存储") + "</span></div>";
     document.body.appendChild(panel);
     var style = document.createElement("style");
     style.id = "dse-np-style";
@@ -1491,7 +1651,7 @@
       return null;
     }
     function refreshSelect() {
-      fileSelect.innerHTML = '<option value="">选择文件...</option>';
+      fileSelect.innerHTML = '<option value="">' + t("选择文件...") + "</option>";
       for (var i = 0; i < files.length; i++) {
         var opt = document.createElement("option");
         opt.value = files[i].id;
@@ -1501,7 +1661,7 @@
       }
     }
     function updateCharCount() {
-      charCount.textContent = "字符: " + textarea.value.length;
+      charCount.textContent = t("字符: ") + textarea.value.length;
     }
     function saveFile() {
       var f2 = getCurFile();
@@ -1510,7 +1670,7 @@
       f2.updateTime = Date.now();
       saveStorage();
       fileInfo.textContent = f2.title + " - " + new Date(f2.updateTime).toLocaleString();
-      saveStatus.textContent = "已保存";
+      saveStatus.textContent = t("已保存");
     }
     function loadFile(f2) {
       var prev = getCurFile();
@@ -1528,7 +1688,7 @@
       saveStorage();
     }
     function createFile() {
-      var title = prompt("新文件标题:", "笔记");
+      var title = prompt(t("新文件标题:"), t("笔记"));
       if (!title) return;
       var f2 = { id: Date.now().toString(), title, content: "", createTime: Date.now(), updateTime: Date.now() };
       var prev = getCurFile();
@@ -1550,19 +1710,19 @@
     function renameFile() {
       var f2 = getCurFile();
       if (!f2) return;
-      var t = prompt("新标题:", f2.title);
-      if (t && t !== f2.title) {
-        f2.title = t;
+      var t2 = prompt(t("新标题:"), f2.title);
+      if (t2 && t2 !== f2.title) {
+        f2.title = t2;
         f2.updateTime = Date.now();
         saveStorage();
         refreshSelect();
-        fileInfo.textContent = t + " - " + new Date(f2.updateTime).toLocaleString();
+        fileInfo.textContent = t2 + " - " + new Date(f2.updateTime).toLocaleString();
       }
     }
     function deleteFile() {
       var f2 = getCurFile();
       if (!f2) return;
-      if (!confirm('删除 "' + f2.title + '"？')) return;
+      if (!confirm(t('删除 "') + f2.title + t('"？'))) return;
       files = files.filter(function(x) {
         return x.id !== f2.id;
       });
@@ -1664,7 +1824,7 @@
     panel._files = files;
     S.notepadPanel = panel;
     if (files.length === 0) {
-      var f = { id: "1", title: "笔记", content: "", createTime: Date.now(), updateTime: Date.now() };
+      var f = { id: "1", title: t("笔记"), content: "", createTime: Date.now(), updateTime: Date.now() };
       files.push(f);
       curId = "1";
       S.notepadFiles = files;
@@ -1701,7 +1861,7 @@
     if (document.getElementById("dse-ui")) return;
     var el = document.createElement("div");
     el.id = "dse-ui";
-    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="原版" class="on">原</button><button id="dse-panel-trigger" title="自定义">⚙</button><button id="dse-notepad-trigger" title="笔记" style="' + (S.showNotepadBtn ? "" : "display:none;") + '">📝</button><button id="dse-dark-toggle" title="深色/浅色" style="' + (S.showDarkBtn ? "" : "display:none;") + '">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
+    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="' + t("原版") + '" class="on">' + t("原") + '</button><button id="dse-panel-trigger" title="' + t("自定义") + '">⚙</button><button id="dse-notepad-trigger" title="' + t("笔记") + '" style="' + (S.showNotepadBtn ? "" : "display:none;") + '">📝</button><button id="dse-dark-toggle" title="' + t("深色/浅色") + '" style="' + (S.showDarkBtn ? "" : "display:none;") + '">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
     document.body.appendChild(el);
     el.addEventListener("click", function(e) {
       var btn = e.target.closest("button");
@@ -1765,14 +1925,14 @@
     updateUI();
   }
   function waitForScrollContainer(cb) {
-    var t = 0;
+    var t2 = 0;
     var iv = setInterval(function() {
-      t++;
+      t2++;
       var sc = getScrollContainer();
       if (sc) {
         clearInterval(iv);
         cb(sc);
-      } else if (t >= 40) clearInterval(iv);
+      } else if (t2 >= 40) clearInterval(iv);
     }, 250);
   }
   function setupMessageObserver() {
@@ -1893,6 +2053,7 @@
     S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
+    S.lang = GM_getValue(S.K.LANG, "auto");
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
     S.currentMode = getMode();
     S.currentItemKey = 1;

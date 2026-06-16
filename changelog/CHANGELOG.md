@@ -1,5 +1,25 @@
 # DeepSeek Web Chat Enhancer — 变更日志
 
+## v4.3.0 (2026-06-16)
+
+### 新增功能
+- **中英双语切换** — 界面语言支持自动/中文/English 三态选择，面板所有标签、按钮文字、笔记面板即时切换
+- **独立"语言"选项卡** — 面板新增语言选项卡（位于头像与"其他"之间），含语言选择器
+
+### 新增模块
+- `i18n.js` — 翻译字典（~90 条中英映射）、`t()`/`getLang()`/`refreshLang()` 双语文案系统
+
+### BUG 修复
+- **头像不跟随新消息** — `scheduleLightUpdate` 追加 `scheduleAvatarUpdate()`，新消息出现后自动刷新头像位置
+- **流式对话角色误判** — `getRole()` fallback 增加 `.ds-think-content` 检测，AI 思考阶段也能正确识别 assistant
+- **移除哈希类名** — `getMessageContentBox` 去掉 `.fbb737a4`，改用 `.ds-markdown` 稳定选择器
+- **头像锚点始终跟随思考块** — assistant 锚点优先级：`.ds-think-content` → `.ds-assistant-message-main-content`
+
+### 功能改进
+- 面板左侧选项卡标签和"恢复默认"按钮随语言切换实时更新
+
+---
+
 ## v4.2.0 (2026-06-16)
 
 ### 新增功能

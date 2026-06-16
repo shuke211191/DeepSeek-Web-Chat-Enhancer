@@ -1,4 +1,5 @@
 import { S } from './state';
+import { t } from './i18n';
 
 var MAX_LINES = 5;
 var POLL_MS = 1000;
@@ -42,7 +43,7 @@ function addFoldButton(bubble) {
     var btn = document.createElement('button');
     btn.className = 'dse-usr-fold-btn';
     btn.innerHTML = '\u25BE';
-    btn.title = '折叠/展开';
+    btn.title = t('折叠/展开');
     btn.addEventListener('click', function (e) {
         e.stopPropagation();
         if (bubble.classList.contains('dse-usr-folded')) {

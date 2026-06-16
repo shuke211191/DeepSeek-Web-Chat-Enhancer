@@ -71,7 +71,17 @@ function getViewportForAvatar() {
     return { top: 0, bottom: window.innerHeight };
 }
 
-function getRole(el) { if (el.dataset.dsRole) return el.dataset.dsRole; return el.querySelector('.ds-assistant-message-main-content') ? 'assistant' : 'user'; }
+function getRole(el) {
+    if (
+    el.querySelector(".ds-assistant-message-main-content") ||
+    el.querySelector(".ds-think-content")) {
+        return "assistant";
+    }
+
+    if (el.dataset.dsRole) return el.dataset.dsRole;
+    return "user"; 
+
+}
 function clampNumber(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
 function getMessageContentBox(msg, role) {
@@ -81,7 +91,7 @@ function getMessageContentBox(msg, role) {
         if (think && think.getBoundingClientRect().height >= 4) return think;
         return msg.querySelector('.ds-assistant-message-main-content') || msg.querySelector('.ds-markdown') || msg;
     }
-    return msg.querySelector('.fbb737a4') || msg.querySelector('.ds-markdown') || msg.querySelector('p') || msg.firstElementChild || msg;
+    return msg.querySelector('.ds-markdown') || msg.querySelector('p') || msg.firstElementChild || msg;
 }
 
 export function updateAvatarPositions() {

@@ -1,4 +1,5 @@
 import { S } from './state';
+import { scheduleAvatarUpdate } from './avatars';
 
 export function updateMaxItemKey() {
     var items = document.querySelectorAll('[data-virtual-list-item-key]');
@@ -21,13 +22,24 @@ export function collectMessages(root) {
 
 export function tagMessageRoles(root) {
     var msgs = collectMessages(root);
+
     for (var i = 0; i < msgs.length; i++) {
         var msg = msgs[i];
-        if (msg.dataset.dsRole) continue;
-        var role = msg.querySelector('.ds-assistant-message-main-content') ? 'assistant' : 'user';
+
+        var role =
+        msg.querySelector(".ds-assistant-message-main-content") ||
+        msg.querySelector(".ds-think-content")
+            ? "assistant"
+            : "user";
+
+        if (!msg.dataset.dsRole || msg.dataset.dsRole === "user" || role === "assistant") {
         msg.dataset.dsRole = role;
-        var item = msg.closest('[data-virtual-list-item-key]');
-        if (item && !item.dataset.dsRole) item.dataset.dsRole = role;
+        }
+
+        var item = msg.closest("[data-virtual-list-item-key]");
+        if (item && (!item.dataset.dsRole || item.dataset.dsRole === "user" || role === "assistant")) {
+        item.dataset.dsRole = role;
+        }
     }
 }
 
@@ -37,5 +49,6 @@ export function scheduleLightUpdate(delay) {
         S.updateTimer = null;
         tagMessageRoles();
         updateMaxItemKey();
+        scheduleAvatarUpdate();
     }, delay || 250);
 }

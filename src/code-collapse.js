@@ -1,4 +1,5 @@
 import { S } from './state';
+import { t } from './i18n';
 
 var POLL_MS = 1000;
 
@@ -23,7 +24,7 @@ function addFoldButton(block) {
 
     var btn = document.createElement('button');
     btn.className = 'dse-code-fold-btn';
-    btn.title = '折叠代码';
+    btn.title = t('折叠代码');
     btn.innerHTML = '\u25BE';
 
     var collapsed = false;
@@ -32,12 +33,12 @@ function addFoldButton(block) {
         if (collapsed) {
             pre.style.display = '';
             btn.innerHTML = '\u25BE';
-            btn.title = '折叠代码';
+            btn.title = t('折叠代码');
             collapsed = false;
         } else {
             pre.style.display = 'none';
             btn.innerHTML = '\u25B8';
-            btn.title = '展开代码';
+            btn.title = t('展开代码');
             collapsed = true;
         }
     });

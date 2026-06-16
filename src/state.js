@@ -78,6 +78,7 @@ export var K = {
     AUTO_COLLAPSE_USER: 'dse3_acu',
     CODE_FOLD_ON: 'dse3_cfon',
     CODE_BLOCK_HEIGHT_ON: 'dse3_cbho',
+    LANG: 'dse3_lang',
     FOCUS_INPUT_SHORTCUT: 'dse3_fis'
 };
 
@@ -109,6 +110,7 @@ export var S = {
     autoThinkOn: false, autoThinkMode: 'always', autoThinkDelay: 500,
     autoCollapseUser: false,
     codeFoldOn: false, codeBlockHeightOn: false,
+    lang: 'auto',
     focusInputShortcut: true
 };
 

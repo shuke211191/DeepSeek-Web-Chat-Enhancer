@@ -1,5 +1,6 @@
 import { S } from './state';
 import { getScrollContainer, updateUI } from './utils';
+import { t } from './i18n';
 
 var NOTIFY_TIMER = null;
 
@@ -26,25 +27,25 @@ export function createNotepad() {
 
     panel.innerHTML =
         '<div class="np-header" style="background:var(--dsw-alias-bg-base,#f5f5f5);padding:7px 10px;cursor:move;display:flex;justify-content:space-between;align-items:center;user-select:none;border-radius:10px 10px 0 0;border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);">' +
-        '<span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">📝 笔记</span>' +
+        '<span style="font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)">' + t('📝 笔记') + '</span>' +
         '<div style="display:flex;gap:4px;">' +
-        '<button class="np-btn" id="np-btn-new" title="新建">📄</button>' +
-        '<button class="np-btn" id="np-btn-dl" title="下载.md">📥</button>' +
-        '<button class="np-btn" id="np-btn-close" title="关闭">✕</button>' +
+        '<button class="np-btn" id="np-btn-new" title="' + t('新建') + '">📄</button>' +
+        '<button class="np-btn" id="np-btn-dl" title="' + t('下载.md') + '">📥</button>' +
+        '<button class="np-btn" id="np-btn-close" title="' + t('关闭') + '">✕</button>' +
         '</div></div>' +
         '<div class="np-body" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;">' +
         '<div style="padding:4px 8px;display:flex;align-items:center;gap:4px;background:var(--dsw-alias-bg-base,#fafafa);border-bottom:1px solid var(--dsw-alias-border-l2,#e0e4ea);">' +
         '<select id="np-file-select" style="flex:1;padding:3px 4px;border:1px solid var(--dsw-alias-border-l1,#ddd);border-radius:4px;font-size:11px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);height:24px;min-width:0;">' +
-        '<option value="">选择文件...</option></select>' +
-        '<button class="np-btn-sm" id="np-btn-rename" title="重命名">✏️</button>' +
-        '<button class="np-btn-sm" id="np-btn-delete" title="删除">🗑️</button>' +
+        '<option value="">' + t('选择文件...') + '</option></select>' +
+        '<button class="np-btn-sm" id="np-btn-rename" title="' + t('重命名') + '">✏️</button>' +
+        '<button class="np-btn-sm" id="np-btn-delete" title="' + t('删除') + '">🗑️</button>' +
         '</div>' +
-        '<textarea id="np-textarea" placeholder="在此记录..." style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea>' +
+        '<textarea id="np-textarea" placeholder="' + t('在此记录...') + '" style=..."flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea>' +
         '</div>' +
         '<div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;">' +
-        '<span id="np-char-count">字符: 0</span>' +
+        '<span id="np-char-count">' + t('字符: 0') + '</span>' +
         '<span id="np-file-info"></span>' +
-        '<span id="np-save-status">本地存储</span>' +
+        '<span id="np-save-status">' + t('本地存储') + '</span>' +
         '</div>';
 
     document.body.appendChild(panel);
@@ -80,7 +81,7 @@ export function createNotepad() {
     function getCurFile() { for (var i = 0; i < files.length; i++) { if (files[i].id === curId) return files[i]; } return null; }
 
     function refreshSelect() {
-        fileSelect.innerHTML = '<option value="">选择文件...</option>';
+        fileSelect.innerHTML = '<option value="">' + t('选择文件...') + '</option>';
         for (var i = 0; i < files.length; i++) {
             var opt = document.createElement('option');
             opt.value = files[i].id;
@@ -90,7 +91,7 @@ export function createNotepad() {
         }
     }
 
-    function updateCharCount() { charCount.textContent = '字符: ' + textarea.value.length; }
+    function updateCharCount() { charCount.textContent = t('字符: ') + textarea.value.length; }
 
     function saveFile() {
         var f = getCurFile(); if (!f) return;
@@ -98,7 +99,7 @@ export function createNotepad() {
         f.updateTime = Date.now();
         saveStorage();
         fileInfo.textContent = f.title + ' - ' + new Date(f.updateTime).toLocaleString();
-        saveStatus.textContent = '已保存';
+        saveStatus.textContent = t('已保存');
     }
 
     function loadFile(f) {
@@ -115,7 +116,7 @@ export function createNotepad() {
     }
 
     function createFile() {
-        var title = prompt('新文件标题:', '笔记');
+        var title = prompt(t('新文件标题:'), t('笔记'));
         if (!title) return;
         var f = { id: Date.now().toString(), title: title, content: '', createTime: Date.now(), updateTime: Date.now() };
         // 存旧文件
@@ -134,13 +135,13 @@ export function createNotepad() {
 
     function renameFile() {
         var f = getCurFile(); if (!f) return;
-        var t = prompt('新标题:', f.title);
-        if (t && t !== f.title) { f.title = t; f.updateTime = Date.now(); saveStorage(); refreshSelect(); fileInfo.textContent = t + ' - ' + new Date(f.updateTime).toLocaleString(); }
+        var t2 = prompt(t('新标题:'), f.title);
+        if (t2 && t2 !== f.title) { f.title = t2; f.updateTime = Date.now(); saveStorage(); refreshSelect(); fileInfo.textContent = t2 + ' - ' + new Date(f.updateTime).toLocaleString(); }
     }
 
     function deleteFile() {
         var f = getCurFile(); if (!f) return;
-        if (!confirm('删除 "' + f.title + '"？')) return;
+        if (!confirm(t('删除 "') + f.title + t('"？'))) return;
         files = files.filter(function (x) { return x.id !== f.id; });
         S.notepadFiles = files;
         if (curId === f.id) { curId = files.length > 0 ? files[0].id : null; S.notepadCurId = curId; }
@@ -213,7 +214,7 @@ export function createNotepad() {
 
     // 初始化文件列表
     if (files.length === 0) {
-        var f = { id: '1', title: '笔记', content: '', createTime: Date.now(), updateTime: Date.now() };
+        var f = { id: '1', title: t('笔记'), content: '', createTime: Date.now(), updateTime: Date.now() };
         files.push(f); curId = '1'; S.notepadFiles = files; S.notepadCurId = curId; saveStorage();
     }
     S.notepadFiles = files; S.notepadCurId = curId;

@@ -1,4 +1,5 @@
 import { S } from './state';
+import { t } from './i18n';
 
 var STYLE_ID = 'dse-formula-style';
 
@@ -17,7 +18,7 @@ function enableFormula() {
         s.textContent =
             '.katex{transition:background-color .3s,border-radius .3s;transition-delay:.1s;position:relative;}' +
             '.katex:hover{background-color:rgba(86,134,254,.12)!important;border-radius:6px;cursor:pointer;}' +
-            '.katex-display:hover::after{content:"双击复制 LaTeX";position:absolute;right:0;top:-18px;font-size:11px;color:#9ca3af;pointer-events:none;opacity:.8;font-family:sans-serif;}' +
+            '.katex-display:hover::after{content:"' + t('双击复制 LaTeX') + '";position:absolute;right:0;top:-18px;font-size:11px;color:#9ca3af;pointer-events:none;opacity:.8;font-family:sans-serif;}' +
             '.dse-formula-tip{position:fixed;background:rgba(30,30,30,.85);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-family:sans-serif;backdrop-filter:blur(4px);pointer-events:none;z-index:9999999;transform:translateY(10px) translateX(-50%);opacity:0;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .3s cubic-bezier(.25,.8,.25,1);}' +
             '.dse-formula-tip.show{transform:translateY(0) translateX(-50%);opacity:1;}';
         document.head.appendChild(s);
@@ -50,7 +51,7 @@ function onDblClick(e) {
     var tex = ann.textContent;
     var isDisp = kb.classList.contains('katex-display') || (kb.parentElement && kb.parentElement.classList.contains('katex-display'));
     var out = isDisp ? '\n$$ ' + tex + ' $$\n' : '$' + tex + '$';
-    navigator.clipboard.writeText(out).then(function () { showTip('已复制 LaTeX', e.clientX, e.clientY); }).catch(function () {});
+    navigator.clipboard.writeText(out).then(function () { showTip(t('已复制 LaTeX'), e.clientX, e.clientY); }).catch(function () {});
 }
 
 function onCopy(e) {
@@ -87,5 +88,5 @@ function onCopy(e) {
     document.body.removeChild(div);
 
     if (e.clipboardData) { e.clipboardData.setData('text/plain', clean); e.clipboardData.setData('text/html', '<pre>' + clean + '</pre>'); }
-    showTip('已提取 LaTeX');
+    showTip(t('已提取 LaTeX'));
 }

@@ -55,6 +55,8 @@ function init() {
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
 
+    S.lang = GM_getValue(S.K.LANG, 'auto');
+
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
 
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;

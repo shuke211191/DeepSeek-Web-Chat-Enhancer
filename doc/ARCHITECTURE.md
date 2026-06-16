@@ -20,6 +20,7 @@ src/
 ├── think-collapse.js 思考块自动折叠系统
 ├── user-collapse.js  用户消息自动折叠
 ├── code-collapse.js  代码块折叠与高度限制
+├── i18n.js            中英双语文案系统
 └── header.txt      Tampermonkey 元数据块
 ```
 
@@ -115,6 +116,13 @@ src/
 - 两个功能各自独立的 `MutationObserver` + 轮询，处理虚拟列表动态渲染
 - 开关位于面板"强调/代码"选项卡底部
 
+### `i18n.js`
+- 导出 `t(str)` — 双语文案获取函数，根据 `S.lang`（`auto`/`zh`/`en`）和 `navigator.language` 返回中文或英文
+- 导出 `getLang()` — 返回 `'zh'` 或 `'en'`，处理 auto 模式下的浏览器语言检测
+- 导出 `refreshLang()` — 语言切换后直接 DOM 操作更新浮动按钮、折叠按钮 tooltip、左侧选项卡标签、恢复默认按钮
+- 翻译字典 `dict` — ~90 条中英映射，覆盖 panel/notepad/buttons/formula 等全部 UI 字符串
+- 不导入其他业务模块，仅通过 `querySelector` 操作 DOM，避免循环依赖
+
 ### `main.js`
 - 从 GM 存储加载持久化状态到 S
 - 初始化各子系统的启动顺序
@@ -148,7 +156,8 @@ main.js
   ├── buttons.js ─── state, utils, messages, theme, font, panel
   ├── observers.js ─ state, utils, messages, theme, avatars, panel
   ├── think-collapse.js ─ state
-  ├── user-collapse.js ─ state
-  ├── code-collapse.js ─ state
+  ├── user-collapse.js ─ state, i18n
+  ├── code-collapse.js ─ state, i18n
+  ├── i18n.js ─────── state
   └── header.txt
 ```
