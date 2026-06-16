@@ -12,6 +12,6 @@ export function loadFont() {
         document.head.appendChild(S.fontLinkEl);
     }
     var s = document.createElement('style'); s.id = 'dse-font-style';
-    s.textContent = '.ds-enhancer-font .ds-markdown,.ds-enhancer-font textarea,.ds-enhancer-font .fbb737a4{font-family:"' + S.fontName.trim().replace(/"/g, '\\"') + '",var(--dsw-font-family),system-ui,sans-serif!important;}';
+    s.textContent = '.ds-enhancer-font .ds-markdown,.ds-enhancer-font textarea,.ds-enhancer-font .ds-message > div{font-family:"' + S.fontName.trim().replace(/"/g, '\\"') + '",var(--dsw-font-family),system-ui,sans-serif!important;}';
     document.head.appendChild(s);
 }
