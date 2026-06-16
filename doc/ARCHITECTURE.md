@@ -19,6 +19,7 @@ src/
 ├── formula.js      LaTeX 公式双击复制
 ├── think-collapse.js 思考块自动折叠系统
 ├── user-collapse.js  用户消息自动折叠
+├── code-collapse.js  代码块折叠与高度限制
 └── header.txt      Tampermonkey 元数据块
 ```
 
@@ -103,6 +104,17 @@ src/
 - 动态测量 `line-height` 计算阈值，`max-height` 限制 + `overflow-y: auto` 支持折叠内滚动
 - 按钮 `position: sticky` 随内容滚动，hover 显示
 
+### `code-collapse.js`
+- `setupCodeFold()` / `stopCodeFold()` — 代码块折叠按钮功能
+- `setupCodeBlockHeight()` / `stopCodeBlockHeight()` — 代码块高度限制功能
+- `addFoldButton(block)` — 在 `.md-code-block-banner-wrap` 内按钮栏首位插入折叠按钮
+- 按钮容器通过 `banner.querySelector('[role="button"]')?.parentElement` 定位，不依赖哈希类名
+- 折叠按钮点击切换 `<pre>` 的 `display:none` / `''`，默认展开
+- 高度限制：为 `<pre>` 添加 `.dse-code-block-limited` 类 → `max-height:60vh;overflow-y:auto`
+- 滚动条使用原生样式（`overflow-y:auto`），与用户折叠保持一致
+- 两个功能各自独立的 `MutationObserver` + 轮询，处理虚拟列表动态渲染
+- 开关位于面板"强调/代码"选项卡底部
+
 ### `main.js`
 - 从 GM 存储加载持久化状态到 S
 - 初始化各子系统的启动顺序
@@ -137,5 +149,6 @@ main.js
   ├── observers.js ─ state, utils, messages, theme, avatars, panel
   ├── think-collapse.js ─ state
   ├── user-collapse.js ─ state
+  ├── code-collapse.js ─ state
   └── header.txt
 ```

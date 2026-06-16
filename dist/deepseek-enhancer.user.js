@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.1.0
-// @description  配色+字体+浮动头像+方向键跳转+自动折叠思考，模块化版本
+// @version      4.2.0
+// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+高度限制+自动折叠，模块化版本
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*
@@ -16,6 +16,7 @@
 // 公式复制 - https://greasyfork.org/zh-CN/scripts/576764-deepseek-latex-copier-deepseek%E5%85%AC%E5%BC%8F%E5%A4%8D%E5%88%B6%E5%99%A8/code
 // 单窗口记事本 - https://greasyfork.org/zh-CN/scripts/557500-deepseek%E5%8D%95%E7%AA%97%E5%8F%A3%E8%AE%B0%E4%BA%8B%E6%9C%AC-v2-0/code
 // 折叠思考 - https://greasyfork.org/zh-CN/scripts/580006-deepseek%E9%BB%98%E8%AE%A4%E6%8A%98%E5%8F%A0%E6%80%9D%E8%80%83/code
+// 代码块折叠 - https://greasyfork.org/zh-CN/scripts/576019-deepseek%E4%BB%A3%E7%A0%81%E5%9D%97%E6%8A%98%E5%8F%A0/code
 (function() {
   "use strict";
   var DEF = {
@@ -93,6 +94,8 @@
     AUTO_THINK_MODE: "dse3_atmd",
     AUTO_THINK_DELAY: "dse3_atdy",
     AUTO_COLLAPSE_USER: "dse3_acu",
+    CODE_FOLD_ON: "dse3_cfon",
+    CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
     FOCUS_INPUT_SHORTCUT: "dse3_fis"
   };
   var S = {
@@ -147,6 +150,8 @@
     autoThinkMode: "always",
     autoThinkDelay: 500,
     autoCollapseUser: false,
+    codeFoldOn: false,
+    codeBlockHeightOn: false,
     focusInputShortcut: true
   };
   S.K = K;
@@ -753,7 +758,7 @@
     showTip("已提取 LaTeX");
   }
   var THINK_SEL = ".ds-think-content";
-  var POLL_MS$1 = 1e3;
+  var POLL_MS$2 = 1e3;
   var processed$1 = /* @__PURE__ */ new WeakSet();
   var pendingTimers = /* @__PURE__ */ new Map();
   var observedEls = /* @__PURE__ */ new Map();
@@ -834,7 +839,7 @@
     function poll() {
       if (!S.autoThinkOn) return;
       processAll$1();
-      pollTimer$1 = setTimeout(poll, POLL_MS$1);
+      pollTimer$1 = setTimeout(poll, POLL_MS$2);
     }
     pollTimer$1 = setTimeout(poll, 3e3);
   }
@@ -879,7 +884,7 @@
     processed$1 = /* @__PURE__ */ new WeakSet();
   }
   var MAX_LINES = 5;
-  var POLL_MS = 1e3;
+  var POLL_MS$1 = 1e3;
   var processed = /* @__PURE__ */ new WeakSet();
   var observer = null;
   var pollTimer = null;
@@ -893,7 +898,7 @@
     var lh = parseFloat(style.lineHeight) || 24;
     return Math.ceil(bubble.scrollHeight / lh);
   }
-  function addFoldButton(bubble) {
+  function addFoldButton$1(bubble) {
     if (processed.has(bubble)) return;
     processed.add(bubble);
     var lines = countLines(bubble);
@@ -930,7 +935,7 @@
     var msgs = document.querySelectorAll('.ds-message[data-ds-role="user"]');
     for (var i = 0; i < msgs.length; i++) {
       var bubble = getUserBubble(msgs[i]);
-      if (bubble) addFoldButton(bubble);
+      if (bubble) addFoldButton$1(bubble);
     }
   }
   function setupUserCollapse() {
@@ -951,7 +956,7 @@
     function poll() {
       if (!S.autoCollapseUser) return;
       processAll();
-      pollTimer = setTimeout(poll, POLL_MS);
+      pollTimer = setTimeout(poll, POLL_MS$1);
     }
     pollTimer = setTimeout(poll, 3e3);
   }
@@ -977,6 +982,133 @@
     var bubbles = document.querySelectorAll(".dse-usr-bubble");
     for (var k = 0; k < bubbles.length; k++) bubbles[k].classList.remove("dse-usr-bubble");
     processed = /* @__PURE__ */ new WeakSet();
+  }
+  var POLL_MS = 1e3;
+  var foldObserver = null;
+  var foldPollTimer = null;
+  var heightObserver = null;
+  var heightPollTimer = null;
+  function addFoldButton(block) {
+    if (block.querySelector(".dse-code-fold-btn")) return;
+    var banner = block.querySelector(".md-code-block-banner-wrap");
+    if (!banner) return;
+    var pre = block.querySelector("pre");
+    if (!pre) return;
+    var firstBtn = banner.querySelector('[role="button"], button');
+    if (!firstBtn) return;
+    var container = firstBtn.parentElement;
+    var btn = document.createElement("button");
+    btn.className = "dse-code-fold-btn";
+    btn.title = "折叠代码";
+    btn.innerHTML = "▾";
+    var collapsed = false;
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      if (collapsed) {
+        pre.style.display = "";
+        btn.innerHTML = "▾";
+        btn.title = "折叠代码";
+        collapsed = false;
+      } else {
+        pre.style.display = "none";
+        btn.innerHTML = "▸";
+        btn.title = "展开代码";
+        collapsed = true;
+      }
+    });
+    container.insertBefore(btn, firstBtn);
+  }
+  function processFoldAll() {
+    var blocks = document.querySelectorAll(".md-code-block");
+    for (var i = 0; i < blocks.length; i++) addFoldButton(blocks[i]);
+  }
+  function removeFoldButtons() {
+    var btns = document.querySelectorAll(".dse-code-fold-btn");
+    for (var i = 0; i < btns.length; i++) btns[i].remove();
+    var pres = document.querySelectorAll(".md-code-block pre");
+    for (var j = 0; j < pres.length; j++) pres[j].style.display = "";
+  }
+  function setupCodeFold() {
+    if (!S.codeFoldOn) return;
+    GM_addStyle(
+      ".dse-code-fold-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;margin-right:2px;border:none;background:none;color:inherit;cursor:pointer;border-radius:4px;font-size:14px;line-height:1;opacity:0.6;transition:opacity .15s,background .15s;flex-shrink:0;}.dse-code-fold-btn:hover{opacity:1;background:rgba(128,128,128,0.15);}"
+    );
+    if (foldObserver) {
+      try {
+        foldObserver.disconnect();
+      } catch (e) {
+      }
+    }
+    foldObserver = new MutationObserver(processFoldAll);
+    foldObserver.observe(document.body, { childList: true, subtree: true });
+    processFoldAll();
+    if (foldPollTimer) clearTimeout(foldPollTimer);
+    function poll() {
+      if (!S.codeFoldOn) return;
+      processFoldAll();
+      foldPollTimer = setTimeout(poll, POLL_MS);
+    }
+    foldPollTimer = setTimeout(poll, 3e3);
+  }
+  function stopCodeFold() {
+    if (foldObserver) {
+      try {
+        foldObserver.disconnect();
+      } catch (e) {
+      }
+      foldObserver = null;
+    }
+    if (foldPollTimer) {
+      clearTimeout(foldPollTimer);
+      foldPollTimer = null;
+    }
+    removeFoldButtons();
+  }
+  function addHeightLimit(block) {
+    var pre = block.querySelector("pre");
+    if (pre) pre.classList.add("dse-code-block-limited");
+  }
+  function processHeightAll() {
+    var blocks = document.querySelectorAll(".md-code-block");
+    for (var i = 0; i < blocks.length; i++) addHeightLimit(blocks[i]);
+  }
+  function removeHeightLimits() {
+    var pres = document.querySelectorAll(".dse-code-block-limited");
+    for (var i = 0; i < pres.length; i++) pres[i].classList.remove("dse-code-block-limited");
+  }
+  function setupCodeBlockHeight() {
+    if (!S.codeBlockHeightOn) return;
+    GM_addStyle(".dse-code-block-limited{max-height:60vh!important;overflow-y:auto!important;}");
+    if (heightObserver) {
+      try {
+        heightObserver.disconnect();
+      } catch (e) {
+      }
+    }
+    heightObserver = new MutationObserver(processHeightAll);
+    heightObserver.observe(document.body, { childList: true, subtree: true });
+    processHeightAll();
+    if (heightPollTimer) clearTimeout(heightPollTimer);
+    function poll() {
+      if (!S.codeBlockHeightOn) return;
+      processHeightAll();
+      heightPollTimer = setTimeout(poll, POLL_MS);
+    }
+    heightPollTimer = setTimeout(poll, 3e3);
+  }
+  function stopCodeBlockHeight() {
+    if (heightObserver) {
+      try {
+        heightObserver.disconnect();
+      } catch (e) {
+      }
+      heightObserver = null;
+    }
+    if (heightPollTimer) {
+      clearTimeout(heightPollTimer);
+      heightPollTimer = null;
+    }
+    removeHeightLimits();
   }
   function syncPanelMode() {
     S.panelMode = getMode();
@@ -1060,6 +1192,20 @@
       else stopThinkCollapse();
       renderPanelContent();
     });
+    bindToggle("dse-code-fold-toggle", function(v) {
+      S.codeFoldOn = v;
+      GM_setValue(S.K.CODE_FOLD_ON, v);
+      if (v) setupCodeFold();
+      else stopCodeFold();
+      renderPanelContent();
+    });
+    bindToggle("dse-code-height-toggle", function(v) {
+      S.codeBlockHeightOn = v;
+      GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, v);
+      if (v) setupCodeBlockHeight();
+      else stopCodeBlockHeight();
+      renderPanelContent();
+    });
     bindToggle("dse-user-fold-toggle", function(v) {
       S.autoCollapseUser = v;
       GM_setValue(S.K.AUTO_COLLAPSE_USER, v);
@@ -1104,6 +1250,9 @@
       html += '<div id="dse-strong-rows" style="' + (S.strongOn ? "" : "display:none") + '"><div class="dse-grid">' + colorRow("light", "浅色", "strong") + colorRow("dark", "深色", "strong") + "</div></div>";
       html += '<div class="dse-toggler"><label class="tgl">自定义行内代码</label><label class="dse-sw"><input id="dse-code-toggle" type="checkbox"' + (S.codeOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div id="dse-code-rows" style="' + (S.codeOn ? "" : "display:none") + '"><div class="dse-grid">' + colorRow("bgL", "背景(浅)", "code") + colorRow("bgD", "背景(深)", "code") + colorRow("textL", "文字(浅)", "code") + colorRow("textD", "文字(深)", "code") + "</div></div>";
+      html += '<div class="dse-sep"></div>';
+      html += '<div class="dse-toggler"><label class="tgl">启用代码块折叠</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">限制代码块高度</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
     } else if (S.activePanelTab === "font") {
       html += '<div class="dse-r"><label>来源</label><select id="dse-font-src" class="dse-input"><option value="system"' + (S.fontSrc === "system" ? " selected" : "") + '>系统字体</option><option value="google"' + (S.fontSrc === "google" ? " selected" : "") + ">Google Fonts</option></select></div>";
       html += '<div class="dse-r"><label>字体名称</label><input id="dse-font-name" class="dse-input" type="text" value="' + esc(S.fontName) + '"></div>';
@@ -1595,6 +1744,12 @@
         S.autoCollapseUser = false;
         GM_setValue(S.K.AUTO_COLLAPSE_USER, false);
         stopUserCollapse();
+        S.codeFoldOn = false;
+        GM_setValue(S.K.CODE_FOLD_ON, false);
+        stopCodeFold();
+        S.codeBlockHeightOn = false;
+        GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
+        stopCodeBlockHeight();
         S.focusInputShortcut = true;
         GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, true);
         applyTheme(getMode());
@@ -1736,6 +1891,8 @@
     S.autoThinkMode = GM_getValue(S.K.AUTO_THINK_MODE, "always");
     S.autoThinkDelay = GM_getValue(S.K.AUTO_THINK_DELAY, 500);
     S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
+    S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
+    S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
     S.currentMode = getMode();
     S.currentItemKey = 1;
@@ -1752,6 +1909,8 @@
     setupFormulaCopier();
     if (S.autoThinkOn) setupThinkCollapse();
     if (S.autoCollapseUser) setupUserCollapse();
+    if (S.codeFoldOn) setupCodeFold();
+    if (S.codeBlockHeightOn) setupCodeBlockHeight();
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
     setTimeout(function() {
       tagMessageRoles();

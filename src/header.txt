@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.1.0
-// @description  配色+字体+浮动头像+方向键跳转+自动折叠思考，模块化版本
+// @version      4.2.0
+// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+高度限制+自动折叠，模块化版本
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*
@@ -16,3 +16,4 @@
 // 公式复制 - https://greasyfork.org/zh-CN/scripts/576764-deepseek-latex-copier-deepseek%E5%85%AC%E5%BC%8F%E5%A4%8D%E5%88%B6%E5%99%A8/code
 // 单窗口记事本 - https://greasyfork.org/zh-CN/scripts/557500-deepseek%E5%8D%95%E7%AA%97%E5%8F%A3%E8%AE%B0%E4%BA%8B%E6%9C%AC-v2-0/code
 // 折叠思考 - https://greasyfork.org/zh-CN/scripts/580006-deepseek%E9%BB%98%E8%AE%A4%E6%8A%98%E5%8F%A0%E6%80%9D%E8%80%83/code
+// 代码块折叠 - https://greasyfork.org/zh-CN/scripts/576019-deepseek%E4%BB%A3%E7%A0%81%E5%9D%97%E6%8A%98%E5%8F%A0/code

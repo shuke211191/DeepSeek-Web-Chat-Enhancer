@@ -6,6 +6,7 @@ import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpd
 import { setupFormulaCopier } from './formula';
 import { setupThinkCollapse, resetThinkCollapse, stopThinkCollapse } from './think-collapse';
 import { setupUserCollapse, stopUserCollapse } from './user-collapse';
+import { setupCodeFold, stopCodeFold, setupCodeBlockHeight, stopCodeBlockHeight } from './code-collapse';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -28,6 +29,8 @@ function rebindPanelToggles() {
     bindToggle('dse-npbtn-toggle', function (v) { S.showNotepadBtn = v; GM_setValue(S.K.SHOW_NP_BTN, v); var b = document.getElementById('dse-notepad-trigger'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
     bindToggle('dse-darkbtn-toggle', function (v) { S.showDarkBtn = v; GM_setValue(S.K.SHOW_DARK_BTN, v); var b = document.getElementById('dse-dark-toggle'); if (b) b.style.display = v ? '' : 'none'; updateUI(); renderPanelContent(); });
     bindToggle('dse-think-toggle', function (v) { S.autoThinkOn = v; GM_setValue(S.K.AUTO_THINK_ON, v); if (v) setupThinkCollapse(); else stopThinkCollapse(); renderPanelContent(); });
+    bindToggle('dse-code-fold-toggle', function (v) { S.codeFoldOn = v; GM_setValue(S.K.CODE_FOLD_ON, v); if (v) setupCodeFold(); else stopCodeFold(); renderPanelContent(); });
+    bindToggle('dse-code-height-toggle', function (v) { S.codeBlockHeightOn = v; GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, v); if (v) setupCodeBlockHeight(); else stopCodeBlockHeight(); renderPanelContent(); });
     bindToggle('dse-user-fold-toggle', function (v) { S.autoCollapseUser = v; GM_setValue(S.K.AUTO_COLLAPSE_USER, v); if (v) setupUserCollapse(); else stopUserCollapse(); renderPanelContent(); });
     bindToggle('dse-focus-toggle', function (v) { S.focusInputShortcut = v; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v); });
 }
@@ -67,6 +70,9 @@ export function renderPanelContent() {
         html += '<div id="dse-strong-rows" style="' + (S.strongOn ? '' : 'display:none') + '"><div class="dse-grid">' + colorRow('light','浅色','strong') + colorRow('dark','深色','strong') + '</div></div>';
         html += '<div class="dse-toggler"><label class="tgl">自定义行内代码</label><label class="dse-sw"><input id="dse-code-toggle" type="checkbox"' + (S.codeOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div id="dse-code-rows" style="' + (S.codeOn ? '' : 'display:none') + '"><div class="dse-grid">' + colorRow('bgL','背景(浅)','code') + colorRow('bgD','背景(深)','code') + colorRow('textL','文字(浅)','code') + colorRow('textD','文字(深)','code') + '</div></div>';
+        html += '<div class="dse-sep"></div>';
+        html += '<div class="dse-toggler"><label class="tgl">启用代码块折叠</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-toggler"><label class="tgl">限制代码块高度</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
     } else if (S.activePanelTab === 'font') {
         html += '<div class="dse-r"><label>来源</label><select id="dse-font-src" class="dse-input"><option value="system"' + (S.fontSrc === 'system' ? ' selected' : '') + '>系统字体</option><option value="google"' + (S.fontSrc === 'google' ? ' selected' : '') + '>Google Fonts</option></select></div>';
         html += '<div class="dse-r"><label>字体名称</label><input id="dse-font-name" class="dse-input" type="text" value="' + esc(S.fontName) + '"></div>';

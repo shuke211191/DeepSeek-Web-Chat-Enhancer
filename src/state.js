@@ -76,6 +76,8 @@ export var K = {
     AUTO_THINK_MODE: 'dse3_atmd',
     AUTO_THINK_DELAY: 'dse3_atdy',
     AUTO_COLLAPSE_USER: 'dse3_acu',
+    CODE_FOLD_ON: 'dse3_cfon',
+    CODE_BLOCK_HEIGHT_ON: 'dse3_cbho',
     FOCUS_INPUT_SHORTCUT: 'dse3_fis'
 };
 
@@ -106,6 +108,7 @@ export var S = {
     formulaOn: false, showNotepadBtn: true, showDarkBtn: true,
     autoThinkOn: false, autoThinkMode: 'always', autoThinkDelay: 500,
     autoCollapseUser: false,
+    codeFoldOn: false, codeBlockHeightOn: false,
     focusInputShortcut: true
 };
 
