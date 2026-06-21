@@ -13,6 +13,8 @@ Tampermonkey 用户脚本，增强 [DeepSeek 网页端](https://chat.deepseek.co
 
 ## 功能
 
+- **开关**  
+&emsp;&emsp;所有功能可选择是否开启
 - **配色**  
 &emsp;&emsp;1. 自定义浅色/深色模式下的页面配色（背景、主题色、文字、边框）  
 &emsp;&emsp;2. 自定义对话气泡的背景色与文字色  
@@ -29,10 +31,10 @@ Tampermonkey 用户脚本，增强 [DeepSeek 网页端](https://chat.deepseek.co
 &emsp;&emsp;2. 自动折叠用户输入：超过 5 行的用户消息自动折叠，右下角按钮切换，支持滚动阅览  
 &emsp;&emsp;3. 自动折叠代码块：在代码块标题栏插入折叠/展开按钮，点击切换代码显示
 - **限制代码块高度**  
-&emsp;&emsp;代码内容最大 60vh，超出原生滚动条滚动
+&emsp;&emsp;限制代码内容最大高度为 60vh，超出后可滚动查看
 - **公式复制**  
 &emsp;&emsp;1. 双击 LaTeX 公式复制源码  
-&emsp;&emsp;2. 直接复制时也将
+&emsp;&emsp;2. 直接复制时也将复制源码
 - **简单笔记本**  
 &emsp;&emsp;可拖拽多文件笔记面板，支持 Markdown 导出。所有内容存储在本地。
 - **多语言**  
