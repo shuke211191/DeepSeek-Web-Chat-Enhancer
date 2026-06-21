@@ -39,6 +39,8 @@ Tampermonkey 用户脚本，增强 [DeepSeek 网页端](https://chat.deepseek.co
 &emsp;&emsp;可拖拽多文件笔记面板，支持 Markdown 导出。所有内容存储在本地。
 - **多语言**  
 &emsp;&emsp;界面语言自动/中文/English 三态切换
+- **预设**  
+&emsp;&emsp;支持导入/导出预设
 
 <p align="center">
   <img src="image/Showcase%201.webp" width="48%" alt="面板配置">
