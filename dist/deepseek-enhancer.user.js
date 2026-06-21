@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.5.2
-// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠，模块化版本
+// @version      4.6.3
+// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠+预设导入导出，模块化版本
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*
@@ -26,8 +26,8 @@
       "--dsw-alias-border-l1": "#d0d5dd",
       "--dsw-alias-border-l2": "#e0e4ea",
       "--dsw-alias-label-primary": "#1a1a2e",
-      "--dsw-alias-label-secondary": "#6b7280",
-      "--dsw-alias-label-tertiary": "#9ca3af",
+      "--dsw-alias-label-secondary": "#5686fe",
+      "--dsw-alias-label-tertiary": "#5686fe",
       "--dsw-alias-brand-primary": "#5686fe",
       "--dsw-alias-brand-text": "#5686fe",
       "--dsw-alias-interactive-bg-hover": "rgba(86,134,254,0.08)",
@@ -46,8 +46,8 @@
       "--dsw-alias-border-l1": "#3a4050",
       "--dsw-alias-border-l2": "#2a303c",
       "--dsw-alias-label-primary": "#d1d5db",
-      "--dsw-alias-label-secondary": "#8b95a5",
-      "--dsw-alias-label-tertiary": "#606a7c",
+      "--dsw-alias-label-secondary": "#5686ea",
+      "--dsw-alias-label-tertiary": "#5686ea",
       "--dsw-alias-brand-primary": "#5686fe",
       "--dsw-alias-brand-text": "#5686fe",
       "--dsw-alias-interactive-bg-hover": "rgba(86,134,254,0.12)",
@@ -62,8 +62,8 @@
     }
   };
   var NATIVE_DEF = {
-    light: { h: "#1a1a2e", hr: "#e0e4ea", quote: "#6b7280", quoteBorder: "#5686fe", a: "#5686fe", table: "#d0d5dd", thBg: "#f5f7ff", thText: "#1a1a2e" },
-    dark: { h: "#e5e7eb", hr: "#3a4050", quote: "#8b95a5", quoteBorder: "#5686fe", a: "#8cb4ff", table: "#3a4050", thBg: "#1b1f28", thText: "#e5e7eb" }
+    light: { h: "#2d2dff", hr: "#0080ff", quote: "#6b7280", quoteBorder: "#5686fe", a: "#5686fe", table: "#d0d5dd", thBg: "#e2e2e2", thText: "#0080ff" },
+    dark: { h: "#5686fe", hr: "#012583", quote: "#8b95a5", quoteBorder: "#5686fe", a: "#8cb4ff", table: "#0080c0", thBg: "#000128", thText: "#0080ff" }
   };
   var K = {
     PAGE_ON: "dse3_page",
@@ -113,9 +113,9 @@
     fontOn: false,
     avatarOn: false,
     pageColors: null,
-    bubbleColors: { userBg: "#5686fe", userBgD: "#3a5bbf", aiBgL: "#f8fafc", aiBgD: "#1e2430" },
-    strongColors: { light: "#1a1a2e", dark: "#e5e7eb" },
-    codeColors: { bgL: "#f0f4ff", bgD: "#1e2430", textL: "#5686fe", textD: "#8cb4ff" },
+    bubbleColors: { userBg: "#00ff00", userBgD: "#0000ff", aiBgL: "#ffff00", aiBgD: "#400040" },
+    strongColors: { light: "#5686fe", dark: "#5686ea" },
+    codeColors: { bgL: "#5686fe", bgD: "#1e2430", textL: "#ffffff", textD: "#8cb4ff" },
     nativeOn: false,
     nativeColors: null,
     fontSrc: "system",
@@ -789,6 +789,10 @@
     "思考结束后折叠": "After Thinking",
     "延迟 (ms)": "Delay (ms)",
     "快速定位到输入框 (Ctrl+Alt+/)": "Focus Input (Ctrl+Alt+/)",
+    "导出预设": "Export Preset",
+    "导入预设": "Import Preset",
+    "导入预设将覆盖当前所有设置并刷新页面，确定继续？": "Importing will overwrite all current settings and reload the page. Continue?",
+    "预设文件格式无效": "Invalid preset file",
     // user-collapse.js
     "折叠/展开": "Fold/Unfold",
     // default values
@@ -1292,6 +1296,83 @@
     }
     removeHeightLimits();
   }
+  var EXCLUDE_KEYS = {
+    "dse3_npf": true,
+    "dse3_npc": true,
+    "dse3_avui": true,
+    "dse3_lang": true
+  };
+  function getKnownKeys() {
+    var keys = [];
+    for (var k in S.K) {
+      if (Object.prototype.hasOwnProperty.call(S.K, k)) {
+        var storageKey = S.K[k];
+        if (!EXCLUDE_KEYS[storageKey]) keys.push(storageKey);
+      }
+    }
+    return keys;
+  }
+  function timestamp() {
+    var d = /* @__PURE__ */ new Date();
+    var p = function(n) {
+      return n < 10 ? "0" + n : "" + n;
+    };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes());
+  }
+  function exportPreset() {
+    var keys = getKnownKeys();
+    var settings = {};
+    for (var i = 0; i < keys.length; i++) {
+      var val = GM_getValue(keys[i], void 0);
+      if (val !== void 0 && val !== null) settings[keys[i]] = val;
+    }
+    var data = {
+      __preset_version: 1,
+      __app_version: "4.6.0",
+      __exported_at: (/* @__PURE__ */ new Date()).toISOString(),
+      settings
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "deepseek-enhancer-preset-" + timestamp() + ".json";
+    a.click();
+    setTimeout(function() {
+      URL.revokeObjectURL(a.href);
+    }, 200);
+  }
+  function importPreset(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      var text = reader.result;
+      var data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        alert(t("预设文件格式无效"));
+        return;
+      }
+      if (!data || data.__preset_version !== 1 || !data.settings || typeof data.settings !== "object") {
+        alert(t("预设文件格式无效"));
+        return;
+      }
+      var known = {};
+      var keys = getKnownKeys();
+      for (var i = 0; i < keys.length; i++) known[keys[i]] = true;
+      if (!confirm(t("导入预设将覆盖当前所有设置并刷新页面，确定继续？"))) return;
+      for (var key in data.settings) {
+        if (Object.prototype.hasOwnProperty.call(data.settings, key) && known[key]) {
+          GM_setValue(key, data.settings[key]);
+        }
+      }
+      location.reload();
+    };
+    reader.onerror = function() {
+      alert(t("预设文件格式无效"));
+    };
+    reader.readAsText(file, "utf-8");
+  }
   function syncPanelMode() {
     S.panelMode = getMode();
     var panel = document.getElementById("dse-panel");
@@ -1475,6 +1556,7 @@
       }
       html += '<div class="dse-sep"></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("快速定位到输入框 (Ctrl+Alt+/)") + '</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-sep"></div><div class="dse-grid"><button id="dse-export-btn" class="dse-preset-btn">' + t("导出预设") + '</button><button id="dse-import-btn" class="dse-preset-btn">' + t("导入预设") + '</button></div><input type="file" id="dse-import-file" accept=".json,application/json" style="display:none">';
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -1489,6 +1571,22 @@
     }
     rebindPanelToggles();
     syncPanelLeftToggles();
+    var exportBtn = document.getElementById("dse-export-btn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        exportPreset();
+      });
+      var importBtn = document.getElementById("dse-import-btn");
+      var importFile = document.getElementById("dse-import-file");
+      if (importBtn) importBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if (importFile) importFile.click();
+      });
+      if (importFile) importFile.addEventListener("change", function() {
+        if (importFile.files && importFile.files[0]) importPreset(importFile.files[0]);
+      });
+    }
   }
   function selectPanelTab(name) {
     S.activePanelTab = name;
@@ -1504,7 +1602,7 @@
     if (existing) return existing;
     var panel = document.createElement("div");
     panel.id = "dse-panel";
-    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:480px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>' + t("页面配色") + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>' + t("消息气泡") + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>' + t("强调/代码") + '</span></div><div class="dse-tab-item" data-tab="font"><span>' + t("字体") + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>' + t("头像") + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="lang"><span>' + t("语言") + '</span></div><div class="dse-tab-item" data-tab="other"><span>' + t("其他") + '</span></div><div class="dse-sep"></div><button class="dse-rst">' + t("恢复默认") + '</button></div><div id="dse-panel-right"></div>';
+    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:480px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>' + t("页面配色") + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>' + t("消息气泡") + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>' + t("强调/代码") + '</span></div><div class="dse-tab-item" data-tab="font"><span>' + t("字体") + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>' + t("头像") + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="lang"><span>' + t("语言") + '</span></div><div class="dse-tab-item" data-tab="other"><span>' + t("其他") + '</span></div><div class="dse-sep"></div><button class="dse-rst">' + t("恢复默认") + '</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
     panel.querySelectorAll(".dse-tab-item").forEach(function(item) {
       item.addEventListener("click", function(e) {
@@ -1611,11 +1709,25 @@
     });
     panel.querySelector(".dse-rst").addEventListener("click", function() {
       S.pageColors = cloneDef(DEF);
-      S.bubbleColors = { userBg: "#5686fe", userBgD: "#3a5bbf", aiBgL: "#f8fafc", aiBgD: "#1e2430" };
-      S.strongColors = { light: "#1a1a2e", dark: "#e5e7eb" };
-      S.codeColors = { bgL: "#f0f4ff", bgD: "#1e2430", textL: "#5686fe", textD: "#8cb4ff" };
-      S.nativeOn = false;
+      S.bubbleColors = { userBg: "#00ff00", userBgD: "#0000ff", aiBgL: "#ffff00", aiBgD: "#400040" };
+      S.strongColors = { light: "#5686fe", dark: "#5686ea" };
+      S.codeColors = { bgL: "#5686fe", bgD: "#1e2430", textL: "#ffffff", textD: "#8cb4ff" };
       S.nativeColors = cloneDef(NATIVE_DEF);
+      S.pageOn = false;
+      S.bubbleOn = false;
+      S.strongOn = false;
+      S.codeOn = false;
+      S.nativeOn = false;
+      S.fontOn = false;
+      S.avatarOn = false;
+      S.formulaOn = false;
+      S.autoThinkOn = false;
+      S.autoCollapseUser = false;
+      S.codeFoldOn = false;
+      S.codeBlockHeightOn = false;
+      S.showNotepadBtn = true;
+      S.showDarkBtn = true;
+      S.focusInputShortcut = true;
       S.fontSrc = "system";
       S.fontName = "";
       S.avatarUName = t("你");
@@ -1626,24 +1738,30 @@
       S.avatarUserImg = "";
       S.avatarAIImg = "https://www.deepseek.com/favicon.ico";
       S.avatarGap = 32;
-      S.formulaOn = false;
-      S.showNotepadBtn = true;
-      S.showDarkBtn = true;
-      S.autoThinkOn = false;
       S.autoThinkMode = "always";
       S.autoThinkDelay = 500;
+      S.lang = "auto";
+      S.notepadX = 20;
+      S.notepadY = 100;
       stopThinkCollapse();
-      S.autoCollapseUser = false;
       stopUserCollapse();
-      S.focusInputShortcut = true;
+      stopCodeFold();
+      stopCodeBlockHeight();
+      setupFormulaCopier();
+      setAvatarState(false);
       for (var kk in S.K) {
-        if (Object.prototype.hasOwnProperty.call(S.K, kk)) {
-          try {
-            GM_deleteValue(S.K[kk]);
-          } catch (ex) {
-            GM_setValue(S.K[kk], null);
-          }
+        if (!Object.prototype.hasOwnProperty.call(S.K, kk)) continue;
+        var sk = S.K[kk];
+        if (sk === S.K.NOTEPAD_FILES || sk === S.K.NOTEPAD_CUR) continue;
+        try {
+          GM_deleteValue(sk);
+        } catch (ex) {
+          GM_setValue(sk, null);
         }
+      }
+      if (S.notepadPanel) {
+        S.notepadPanel.style.left = S.notepadX + "px";
+        S.notepadPanel.style.top = S.notepadY + "px";
       }
       syncPanelMode();
       applyTheme(getMode());
@@ -1651,6 +1769,7 @@
       updateUI();
       applyAvatarSettings();
       applyAvatarSize();
+      refreshLang();
     });
     document.addEventListener("click", function(e) {
       if (!panel.contains(e.target) && !e.target.closest("#dse-panel-trigger")) {
@@ -2069,10 +2188,10 @@
     S.fontOn = GM_getValue(S.K.FONT_ON, false);
     S.avatarOn = GM_getValue(S.K.AVATAR_ON, false);
     S.pageColors = GM_getValue(S.K.PAGE_COLORS, null) || cloneDef(DEF);
-    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: "#5686fe", userBgD: "#3a5bbf", aiBgL: "#f8fafc", aiBgD: "#1e2430" });
-    if (!S.bubbleColors.userBgD) S.bubbleColors.userBgD = "#3a5bbf";
-    S.strongColors = GM_getValue(S.K.STRONG_C, { light: "#1a1a2e", dark: "#e5e7eb" });
-    S.codeColors = GM_getValue(S.K.CODE_C, { bgL: "#f0f4ff", bgD: "#1e2430", textL: "#5686fe", textD: "#8cb4ff" });
+    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: "#00ff00", userBgD: "#0000ff", aiBgL: "#ffff00", aiBgD: "#400040" });
+    if (!S.bubbleColors.userBgD) S.bubbleColors.userBgD = "#0000ff";
+    S.strongColors = GM_getValue(S.K.STRONG_C, { light: "#5686fe", dark: "#5686ea" });
+    S.codeColors = GM_getValue(S.K.CODE_C, { bgL: "#5686fe", bgD: "#1e2430", textL: "#ffffff", textD: "#8cb4ff" });
     S.nativeOn = GM_getValue(S.K.NATIVE_ON, false);
     S.nativeColors = GM_getValue(S.K.NATIVE_C, null) || cloneDef(NATIVE_DEF);
     S.fontSrc = GM_getValue(S.K.FONT_SRC, "system");

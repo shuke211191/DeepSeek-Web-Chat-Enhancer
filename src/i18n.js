@@ -115,6 +115,10 @@ var dict = {
     '思考结束后折叠': 'After Thinking',
     '延迟 (ms)': 'Delay (ms)',
     '快速定位到输入框 (Ctrl+Alt+/)': 'Focus Input (Ctrl+Alt+/)',
+    '导出预设': 'Export Preset',
+    '导入预设': 'Import Preset',
+    '导入预设将覆盖当前所有设置并刷新页面，确定继续？': 'Importing will overwrite all current settings and reload the page. Continue?',
+    '预设文件格式无效': 'Invalid preset file',
 
     // user-collapse.js
     '折叠/展开': 'Fold/Unfold',

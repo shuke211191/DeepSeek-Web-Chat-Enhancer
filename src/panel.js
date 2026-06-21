@@ -8,6 +8,7 @@ import { setupThinkCollapse, resetThinkCollapse, stopThinkCollapse } from './thi
 import { setupUserCollapse, stopUserCollapse } from './user-collapse';
 import { setupCodeFold, stopCodeFold, setupCodeBlockHeight, stopCodeBlockHeight } from './code-collapse';
 import { t, refreshLang } from './i18n';
+import { exportPreset, importPreset } from './preset';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -114,6 +115,7 @@ export function renderPanelContent() {
         }
         html += '<div class="dse-sep"></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('快速定位到输入框 (Ctrl+Alt+/)') + '</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-sep"></div><div class="dse-grid"><button id="dse-export-btn" class="dse-preset-btn">' + t('导出预设') + '</button><button id="dse-import-btn" class="dse-preset-btn">' + t('导入预设') + '</button></div><input type="file" id="dse-import-file" accept=".json,application/json" style="display:none">';
     }
     right.innerHTML = html;
 
@@ -123,6 +125,15 @@ export function renderPanelContent() {
     }
     rebindPanelToggles();
     syncPanelLeftToggles();
+
+    var exportBtn = document.getElementById('dse-export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function (e) { e.stopPropagation(); exportPreset(); });
+        var importBtn = document.getElementById('dse-import-btn');
+        var importFile = document.getElementById('dse-import-file');
+        if (importBtn) importBtn.addEventListener('click', function (e) { e.stopPropagation(); if (importFile) importFile.click(); });
+        if (importFile) importFile.addEventListener('change', function () { if (importFile.files && importFile.files[0]) importPreset(importFile.files[0]); });
+    }
 }
 
 function selectPanelTab(name) {
@@ -148,7 +159,7 @@ export function createPanel() {
         '#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}' +
         '#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}' +
         '#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}' +
-        '#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}</style>' +
+        '#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}</style>' +
         '<div id="dse-panel-left">' +
         '<div class="dse-tab-item on" data-tab="page"><span>' + t('页面配色') + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
         '<div class="dse-tab-item" data-tab="bubble"><span>' + t('消息气泡') + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
@@ -192,18 +203,31 @@ export function createPanel() {
 
     panel.querySelector('.dse-rst').addEventListener('click', function () {
         S.pageColors = cloneDef(DEF);
-        S.bubbleColors = { userBg: '#5686fe', userBgD: '#3a5bbf', aiBgL: '#f8fafc', aiBgD: '#1e2430' };
-        S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
-        S.nativeOn = false; S.nativeColors = cloneDef(NATIVE_DEF);
-        S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = t('你'); S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
+        S.bubbleColors = { userBg: '#00ff00', userBgD: '#0000ff', aiBgL: '#ffff00', aiBgD: '#400040' };
+        S.strongColors = { light: '#5686fe', dark: '#5686ea' }; S.codeColors = { bgL: '#5686fe', bgD: '#1e2430', textL: '#ffffff', textD: '#8cb4ff' };
+        S.nativeColors = cloneDef(NATIVE_DEF);
+        S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false;
+        S.nativeOn = false; S.fontOn = false; S.avatarOn = false;
+        S.formulaOn = false; S.autoThinkOn = false; S.autoCollapseUser = false;
+        S.codeFoldOn = false; S.codeBlockHeightOn = false;
+        S.showNotepadBtn = true; S.showDarkBtn = true; S.focusInputShortcut = true;
+        S.fontSrc = 'system'; S.fontName = '';
+        S.avatarUName = t('你'); S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
-        S.formulaOn = false; S.showNotepadBtn = true; S.showDarkBtn = true;
-        S.autoThinkOn = false; S.autoThinkMode = 'always'; S.autoThinkDelay = 500;
-        stopThinkCollapse();
-        S.autoCollapseUser = false; stopUserCollapse();
-        S.focusInputShortcut = true;
-        for (var kk in S.K) { if (Object.prototype.hasOwnProperty.call(S.K, kk)) { try { GM_deleteValue(S.K[kk]); } catch (ex) { GM_setValue(S.K[kk], null); } } }
-        syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize();
+        S.autoThinkMode = 'always'; S.autoThinkDelay = 500;
+        S.lang = 'auto';
+        S.notepadX = 20; S.notepadY = 100;
+        stopThinkCollapse(); stopUserCollapse(); stopCodeFold(); stopCodeBlockHeight();
+        setupFormulaCopier();
+        setAvatarState(false);
+        for (var kk in S.K) {
+            if (!Object.prototype.hasOwnProperty.call(S.K, kk)) continue;
+            var sk = S.K[kk];
+            if (sk === S.K.NOTEPAD_FILES || sk === S.K.NOTEPAD_CUR) continue;
+            try { GM_deleteValue(sk); } catch (ex) { GM_setValue(sk, null); }
+        }
+        if (S.notepadPanel) { S.notepadPanel.style.left = S.notepadX + 'px'; S.notepadPanel.style.top = S.notepadY + 'px'; }
+        syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize(); refreshLang();
     });
 
     document.addEventListener('click', function (e) { if (!panel.contains(e.target) && !e.target.closest('#dse-panel-trigger')) { panel.style.display = 'none'; S.panelVisible = false; } });

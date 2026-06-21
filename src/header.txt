@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.5.2
-// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠，模块化版本
+// @version      4.6.3
+// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠+预设导入导出，模块化版本
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*

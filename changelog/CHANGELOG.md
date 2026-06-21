@@ -1,5 +1,67 @@
 # DeepSeek Web Chat Enhancer — 变更日志
 
+## v4.6.3 (2026-06-21)
+
+### 功能改进
+- **默认配色更新为预设样本值** — 将 `sample/deepseek-enhancer-preset-20260621-1658.json` 中的配色值嵌入源码作为新的脚本默认值：
+  - `DEF.light/dark`：`label-secondary`/`label-tertiary` 改为品牌蓝系（`#5686fe`/`#5686ea`）
+  - `NATIVE_DEF`：标题/分隔线/表头背景/表头文字/表格边框改为自定义蓝系
+  - `bubbleColors`：用户气泡浅/深、AI 气泡浅/深改为 `#00ff00`/`#0000ff`/`#ffff00`/`#400040`
+  - `strongColors`：浅/深改为 `#5686fe`/`#5686ea`
+  - `codeColors`：`bgL`/`textL` 改为 `#5686fe`/`#ffffff`
+- "恢复默认"与新用户首次安装均使用这些新默认色；已有自定义的用户不受影响（GM 存储优先）
+- 笔记面板位置默认值保持 `20/100`（屏幕坐标不宜硬编码为 588/468）
+- `sample/deepseek-enhancer-preset-20260621-1658.json` 文件保持原样不动
+
+---
+
+## v4.6.2 (2026-06-21)
+
+### BUG 修复
+- **恢复默认按钮清除用户笔记** — reset 遍历 `S.K` 时跳过 `NOTEPAD_FILES`/`NOTEPAD_CUR`，不再删除用户笔记内容
+- **恢复默认后开关状态不一致** — 此前 8 个开关（pageOn/bubbleOn/strongOn/codeOn/fontOn/avatarOn/codeFoldOn/codeBlockHeightOn）仅清除 GM 存储未重置内存值，导致当前会话面板 UI 与功能仍显示开启、刷新后才关闭。现全部重置为 false，内存/GM/UI 三者一致
+- **恢复默认后代码块折叠/高度限制未拆除** — 新增调用 `stopCodeFold()`/`stopCodeBlockHeight()`，与 think/user collapse 处理对称
+- **恢复默认后公式复制未拆除** — 新增调用 `setupFormulaCopier()`（`S.formulaOn=false` → 内部 `disableFormula()` 移除 style 与 dblclick/copy 监听）
+- **恢复默认后头像未隐藏** — 新增调用 `setAvatarState(false)` 显式隐藏头像元素
+- **恢复默认未重置界面语言** — 新增 `S.lang='auto'` 与 `refreshLang()`，语言即时回归自动检测
+- **恢复默认未重置笔记面板位置** — 新增 `S.notepadX=20`/`S.notepadY=100` 并即时应用到已存在的面板
+
+---
+
+## v4.6.1 (2026-06-21)
+
+### BUG 修复
+- **预设导出排除 per-user 数据** — `preset.js` 的 `EXCLUDE_KEYS` 新增 `dse3_avui`（用户头像 URL，由脚本自动抓取，per-user 不应入预设）与 `dse3_lang`（界面语言，per-user 环境偏好，常随浏览器 locale，不应通过预设强制）
+
+### 维护
+- **更新 sample 默认预设** — `sample/deepseek-enhancer-preset-20260621-1646.json` 重写为脚本全部默认值，移除 `dse3_avui`/`dse3_lang` 与 `dse3_bc` 中过时的 `userText`/`aiTextL`/`aiTextD` 字段，补全此前缺失的 9 个键（头像参数、自动折叠模式/延迟等）
+
+---
+
+## v4.6.0 (2026-06-21)
+
+### 新增功能
+- **导入/导出预设** — 支持将当前全部配置导出为 `.json` 文件、从 `.json` 文件导入配置，便于备份与分享
+- 入口位于面板「其他」tab 底部：「导出预设」「导入预设」两个按钮
+
+### 预设范围
+- **包含**：配色（页面/气泡/强调/代码/原生元素）、所有功能开关、字体、头像、自动折叠、语言、笔记面板位置等全部配置
+- **不含**：笔记文件内容（`NOTEPAD_FILES`/`NOTEPAD_CUR`），避免泄露用户笔记隐私与无效文件 id 残留
+
+### 文件格式
+- 导出文件名：`deepseek-enhancer-preset-YYYYMMDD-HHmm.json`
+- JSON 含 `__preset_version`(=1)、`__app_version`、`__exported_at`、`settings`(键值对)
+- 导出时仅写入已显式设置过的键，未动过的设置不写入 → 导入到新环境时该处保持默认值
+
+### 导入机制
+- 校验 `__preset_version === 1` 与 `settings` 对象结构；只接受 `K` 中已知键，忽略未知键
+- 覆盖前 `confirm()` 二次确认；写入后 `location.reload()` 重新加载全部状态（避免手写复杂的增量同步）
+
+### 新增模块
+- `preset.js` — `exportPreset()` / `importPreset(file)`
+
+---
+
 ## v4.5.2 (2026-06-21)
 
 ### 功能改进

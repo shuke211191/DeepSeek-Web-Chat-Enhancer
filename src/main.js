@@ -22,10 +22,10 @@ function init() {
     S.fontOn = GM_getValue(S.K.FONT_ON, false);
     S.avatarOn = GM_getValue(S.K.AVATAR_ON, false);
     S.pageColors = GM_getValue(S.K.PAGE_COLORS, null) || cloneDef(DEF);
-    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: '#5686fe', userBgD: '#3a5bbf', aiBgL: '#f8fafc', aiBgD: '#1e2430' });
-    if (!S.bubbleColors.userBgD) S.bubbleColors.userBgD = '#3a5bbf';
-    S.strongColors = GM_getValue(S.K.STRONG_C, { light: '#1a1a2e', dark: '#e5e7eb' });
-    S.codeColors = GM_getValue(S.K.CODE_C, { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' });
+    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: '#00ff00', userBgD: '#0000ff', aiBgL: '#ffff00', aiBgD: '#400040' });
+    if (!S.bubbleColors.userBgD) S.bubbleColors.userBgD = '#0000ff';
+    S.strongColors = GM_getValue(S.K.STRONG_C, { light: '#5686fe', dark: '#5686ea' });
+    S.codeColors = GM_getValue(S.K.CODE_C, { bgL: '#5686fe', bgD: '#1e2430', textL: '#ffffff', textD: '#8cb4ff' });
     S.nativeOn = GM_getValue(S.K.NATIVE_ON, false);
     S.nativeColors = GM_getValue(S.K.NATIVE_C, null) || cloneDef(NATIVE_DEF);
     S.fontSrc = GM_getValue(S.K.FONT_SRC, 'system');
