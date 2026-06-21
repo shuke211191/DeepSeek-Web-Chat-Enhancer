@@ -17,7 +17,7 @@ import { S } from './state';
 
 export function updateUI() {
     var el = document.getElementById('dse-ui'); if (!el) return;
-    var anyOn = S.pageOn || S.bubbleOn || S.fontOn || S.avatarOn || S.strongOn || S.codeOn;
+    var anyOn = S.pageOn || S.bubbleOn || S.fontOn || S.avatarOn || S.strongOn || S.codeOn || S.nativeOn;
     var btns = el.querySelectorAll('button');
     for (var i = 0; i < btns.length; i++) {
         var b = btns[i]; if (b.id === 'dse-dark-toggle') continue;

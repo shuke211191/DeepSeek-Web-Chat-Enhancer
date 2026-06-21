@@ -1,4 +1,4 @@
-import { S, DEF } from './state';
+import { S, DEF, NATIVE_DEF } from './state';
 import { cloneObj, cloneDef, esc, getMode, updateUI } from './utils';
 import { applyTheme, applyAfter } from './theme';
 import { loadFont } from './font';
@@ -24,6 +24,7 @@ function rebindPanelToggles() {
     bindToggle('dse-bubble-toggle', function (v) { S.bubbleOn = v; GM_setValue(S.K.BUBBLE_ON, v); applyAfter(); renderPanelContent(); });
     bindToggle('dse-strong-toggle', function (v) { S.strongOn = v; GM_setValue(S.K.STRONG_ON, v); applyAfter(); renderPanelContent(); });
     bindToggle('dse-code-toggle', function (v) { S.codeOn = v; GM_setValue(S.K.CODE_ON, v); applyAfter(); renderPanelContent(); });
+    bindToggle('dse-native-toggle', function (v) { S.nativeOn = v; GM_setValue(S.K.NATIVE_ON, v); applyAfter(); renderPanelContent(); });
     bindToggle('dse-font-toggle', function (v) { S.fontOn = v; GM_setValue(S.K.FONT_ON, v); loadFont(); updateUI(); renderPanelContent(); });
     bindToggle('dse-avatar-toggle', function (v) { setAvatarState(v); renderPanelContent(); });
     bindToggle('dse-formula-toggle', function (v) { S.formulaOn = v; GM_setValue(S.K.FORMULA_ON, v); setupFormulaCopier(); renderPanelContent(); });
@@ -54,18 +55,23 @@ export function renderPanelContent() {
 
     var html = '';
     function colorRow(key, label, g) {
-        var val = g === 'bubble' ? S.bubbleColors[key] : g === 'strong' ? S.strongColors[key] : g === 'code' ? S.codeColors[key] : S.pageColors[S.panelMode][key];
+        var val = g === 'bubble' ? S.bubbleColors[key] : g === 'strong' ? S.strongColors[key] : g === 'code' ? S.codeColors[key] : g === 'native' ? S.nativeColors[S.panelMode][key] : S.pageColors[S.panelMode][key];
         return '<div class="dse-r"><label>' + t(label) + '</label><input type="color" data-k="' + key + '" data-g="' + g + '" value="' + (val || '#000') + '"></div>';
     }
 
     if (S.activePanelTab === 'page') {
+        if (!S.nativeColors) S.nativeColors = cloneDef(NATIVE_DEF);
+        if (!S.nativeColors[S.panelMode]) S.nativeColors[S.panelMode] = cloneObj(NATIVE_DEF[S.panelMode]);
         html += '<div class="dse-mode-tabs"><button class="dse-mode-tab' + (S.panelMode === 'light' ? ' on' : '') + '" data-mode="light">' + t('浅色模式') + '</button><button class="dse-mode-tab' + (S.panelMode === 'dark' ? ' on' : '') + '" data-mode="dark">' + t('深色模式') + '</button></div>';
         html += '<div class="dse-grid">' + colorRow('--dsw-alias-bg-base','页面背景','page') + colorRow('--dsw-alias-bg-layer-2','表面/卡片','page') + colorRow('--dsw-alias-brand-primary','主题色','page') + '</div>';
         html += '<div class="dse-sep"></div><div class="dse-grid">' + colorRow('--dsw-alias-label-primary','主文字','page') + colorRow('--dsw-alias-label-secondary','次文字','page') + colorRow('--dsw-alias-label-tertiary','辅助文字','page') + '</div>';
         html += '<div class="dse-sep"></div><div class="dse-grid">' + colorRow('--dsw-alias-border-l1','主边框','page') + colorRow('--dsw-alias-border-l2','次边框','page') + '</div>';
+        html += '<div class="dse-sep"></div>';
+        html += '<div class="dse-toggler"><label class="tgl">' + t('自定义原生元素') + '</label><label class="dse-sw"><input id="dse-native-toggle" type="checkbox"' + (S.nativeOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div id="dse-native-rows" style="' + (S.nativeOn ? '' : 'display:none') + '"><div class="dse-grid">' + colorRow('h','标题','native') + colorRow('hr','分隔线','native') + colorRow('a','链接','native') + '</div><div class="dse-grid">' + colorRow('quote','引用文字','native') + colorRow('quoteBorder','引用边框','native') + '</div><div class="dse-grid">' + colorRow('table','表格边框','native') + colorRow('thBg','表头背景','native') + colorRow('thText','表头文字','native') + '</div></div>';
     } else if (S.activePanelTab === 'bubble') {
-        html += '<div class="dse-section-label">' + t('用户气泡') + '</div><div class="dse-grid">' + colorRow('userBg','背景','bubble') + colorRow('userText','文字','bubble') + '</div>';
-        html += '<div class="dse-sep"></div><div class="dse-section-label">' + t('AI气泡') + '</div><div class="dse-grid">' + colorRow('aiBgL','背景(浅)','bubble') + colorRow('aiBgD','背景(深)','bubble') + colorRow('aiTextL','文字(浅)','bubble') + colorRow('aiTextD','文字(深)','bubble') + '</div>';
+        html += '<div class="dse-section-label">' + t('用户气泡') + '</div><div class="dse-grid">' + colorRow('userBg','背景(浅)','bubble') + colorRow('userBgD','背景(深)','bubble') + '</div>';
+        html += '<div class="dse-sep"></div><div class="dse-section-label">' + t('AI气泡') + '</div><div class="dse-grid">' + colorRow('aiBgL','背景(浅)','bubble') + colorRow('aiBgD','背景(深)','bubble') + '</div>';
     } else if (S.activePanelTab === 'strongcode') {
         html += '<div class="dse-toggler"><label class="tgl">' + t('自定义强调颜色') + '</label><label class="dse-sw"><input id="dse-strong-toggle" type="checkbox"' + (S.strongOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div id="dse-strong-rows" style="' + (S.strongOn ? '' : 'display:none') + '"><div class="dse-grid">' + colorRow('light','浅色','strong') + colorRow('dark','深色','strong') + '</div></div>';
@@ -130,7 +136,7 @@ export function createPanel() {
     var existing = document.getElementById('dse-panel'); if (existing) return existing;
     var panel = document.createElement('div'); panel.id = 'dse-panel';
     panel.innerHTML =
-        '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:430px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}' +
+        '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:480px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}' +
         '#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}' +
         '#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}' +
         '#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}' +
@@ -165,8 +171,9 @@ export function createPanel() {
         else if (g === 'bubble') { S.bubbleColors[key] = val; GM_setValue(S.K.BUBBLE_COLORS, S.bubbleColors); }
         else if (g === 'strong') { S.strongColors[key] = val; GM_setValue(S.K.STRONG_C, S.strongColors); }
         else if (g === 'code') { S.codeColors[key] = val; GM_setValue(S.K.CODE_C, S.codeColors); }
+        else if (g === 'native') { if (!S.nativeColors[S.panelMode]) S.nativeColors[S.panelMode] = cloneObj(NATIVE_DEF[S.panelMode]); S.nativeColors[S.panelMode][key] = val; GM_setValue(S.K.NATIVE_C, S.nativeColors); }
         else if (g === 'avatar') { if (key === 'avuc') { S.avatarUC = val; GM_setValue(S.K.AVATAR_UC, val); } else { S.avatarAC = val; GM_setValue(S.K.AVATAR_AC, val); } applyAvatarSettings(); return; }
-        if (S.pageOn && g === 'page' || S.bubbleOn && g === 'bubble' || g === 'strong' || g === 'code') applyTheme(getMode());
+        if (S.pageOn && g === 'page' || S.bubbleOn && g === 'bubble' || g === 'strong' || g === 'code' || S.nativeOn && g === 'native') applyTheme(getMode());
     });
 
     panel.addEventListener('change', function (e) {
@@ -185,8 +192,9 @@ export function createPanel() {
 
     panel.querySelector('.dse-rst').addEventListener('click', function () {
         S.pageColors = cloneDef(DEF);
-        S.bubbleColors = { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' };
+        S.bubbleColors = { userBg: '#5686fe', userBgD: '#3a5bbf', aiBgL: '#f8fafc', aiBgD: '#1e2430' };
         S.strongColors = { light: '#1a1a2e', dark: '#e5e7eb' }; S.codeColors = { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' };
+        S.nativeOn = false; S.nativeColors = cloneDef(NATIVE_DEF);
         S.fontSrc = 'system'; S.fontName = ''; S.avatarUName = t('你'); S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
         S.formulaOn = false; S.showNotepadBtn = true; S.showDarkBtn = true;

@@ -41,6 +41,11 @@ export var DEF = {
     }
 };
 
+export var NATIVE_DEF = {
+    light: { h: '#1a1a2e', hr: '#e0e4ea', quote: '#6b7280', quoteBorder: '#5686fe', a: '#5686fe', table: '#d0d5dd', thBg: '#f5f7ff', thText: '#1a1a2e' },
+    dark: { h: '#e5e7eb', hr: '#3a4050', quote: '#8b95a5', quoteBorder: '#5686fe', a: '#8cb4ff', table: '#3a4050', thBg: '#1b1f28', thText: '#e5e7eb' }
+};
+
 export var K = {
     PAGE_ON: 'dse3_page',
     BUBBLE_ON: 'dse3_bubble',
@@ -50,6 +55,8 @@ export var K = {
     STRONG_C: 'dse3_scol',
     CODE_ON: 'dse3_con',
     CODE_C: 'dse3_ccol',
+    NATIVE_ON: 'dse3_non',
+    NATIVE_C: 'dse3_ncol',
     FONT_ON: 'dse3_fon',
     FONT_SRC: 'dse3_fsrc',
     FONT_NAME: 'dse3_fname',
@@ -87,9 +94,10 @@ export var S = {
     strongOn: false, codeOn: false,
     fontOn: false, avatarOn: false,
     pageColors: null,
-    bubbleColors: { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' },
+    bubbleColors: { userBg: '#5686fe', userBgD: '#3a5bbf', aiBgL: '#f8fafc', aiBgD: '#1e2430' },
     strongColors: { light: '#1a1a2e', dark: '#e5e7eb' },
     codeColors: { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' },
+    nativeOn: false, nativeColors: null,
     fontSrc: 'system', fontName: '',
     avatarUName: '你', avatarAName: 'DeepSeek',
     avatarUC: '#5686fe', avatarAC: '#10a37f',

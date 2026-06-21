@@ -1,4 +1,4 @@
-import { S, DEF } from './state';
+import { S, DEF, NATIVE_DEF } from './state';
 import { cloneDef, getMode } from './utils';
 import { tagMessageRoles, updateMaxItemKey } from './messages';
 import { applyTheme } from './theme';
@@ -22,9 +22,12 @@ function init() {
     S.fontOn = GM_getValue(S.K.FONT_ON, false);
     S.avatarOn = GM_getValue(S.K.AVATAR_ON, false);
     S.pageColors = GM_getValue(S.K.PAGE_COLORS, null) || cloneDef(DEF);
-    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: '#5686fe', userText: '#ffffff', aiBgL: '#f8fafc', aiBgD: '#1e2430', aiTextL: '#1a1a2e', aiTextD: '#d1d5db' });
+    S.bubbleColors = GM_getValue(S.K.BUBBLE_COLORS, { userBg: '#5686fe', userBgD: '#3a5bbf', aiBgL: '#f8fafc', aiBgD: '#1e2430' });
+    if (!S.bubbleColors.userBgD) S.bubbleColors.userBgD = '#3a5bbf';
     S.strongColors = GM_getValue(S.K.STRONG_C, { light: '#1a1a2e', dark: '#e5e7eb' });
     S.codeColors = GM_getValue(S.K.CODE_C, { bgL: '#f0f4ff', bgD: '#1e2430', textL: '#5686fe', textD: '#8cb4ff' });
+    S.nativeOn = GM_getValue(S.K.NATIVE_ON, false);
+    S.nativeColors = GM_getValue(S.K.NATIVE_C, null) || cloneDef(NATIVE_DEF);
     S.fontSrc = GM_getValue(S.K.FONT_SRC, 'system');
     S.fontName = GM_getValue(S.K.FONT_NAME, '');
     S.avatarUName = GM_getValue(S.K.AVATAR_UNAME, '你');

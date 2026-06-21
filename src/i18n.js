@@ -56,6 +56,15 @@ var dict = {
     '辅助文字': 'Tert Text',
     '主边框': 'Border 1',
     '次边框': 'Border 2',
+    '自定义原生元素': 'Native Elements',
+    '标题': 'Headings',
+    '分隔线': 'Divider',
+    '链接': 'Link',
+    '引用文字': 'Quote Text',
+    '引用边框': 'Quote Border',
+    '表格边框': 'Table Border',
+    '表头背景': 'Header Bg',
+    '表头文字': 'Header Text',
 
     // panel.js - bubble tab
     '用户气泡': 'User Bubble',
