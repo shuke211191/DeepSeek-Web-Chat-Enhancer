@@ -40,7 +40,7 @@ export function createNotepad() {
         '<button class="np-btn-sm" id="np-btn-rename" title="' + t('重命名') + '">✏️</button>' +
         '<button class="np-btn-sm" id="np-btn-delete" title="' + t('删除') + '">🗑️</button>' +
         '</div>' +
-        '<textarea id="np-textarea" placeholder="' + t('在此记录...') + '" style=..."flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea>' +
+        '<textarea id="np-textarea" placeholder="' + t('在此记录...') + '" style="flex:1;width:100%;border:0;padding:8px 10px;font-size:14px;line-height:1.5;resize:none;outline:none;font-family:var(--dsw-font-family),Consolas,monospace;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary);box-sizing:border-box;"></textarea>' +
         '</div>' +
         '<div style="padding:3px 8px;border-top:1px solid var(--dsw-alias-border-l2,#e0e4ea);display:flex;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-tertiary,#888);min-height:20px;">' +
         '<span id="np-char-count">' + t('字符: 0') + '</span>' +

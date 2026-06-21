@@ -1,5 +1,12 @@
 # DeepSeek Web Chat Enhancer — 变更日志
 
+## v4.3.1 (2026-06-21)
+
+### BUG 修复
+- **记事本可编辑区不随窗口缩放** — `notepad.js` 中 textarea 的 `style` 属性误写为 `style=..."flex:1;...`（多出的 `..."` 使整段内联样式失效），改回 `style="flex:1;...`。修复后 `flex:1` 生效，编辑区跟随面板窗口大小自适应；`resize:none` 同步生效，去除 textarea 原生独立缩放手柄（面板整体仍通过 `resize:both` 在右下角缩放）。
+
+---
+
 ## v4.3.0 (2026-06-16)
 
 ### 新增功能
