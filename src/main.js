@@ -12,6 +12,7 @@ import { setupFormulaCopier } from './formula';
 import { setupThinkCollapse } from './think-collapse';
 import { setupUserCollapse } from './user-collapse';
 import { setupCodeFold, setupCodeBlockHeight } from './code-collapse';
+import { startStatusPoll } from './status';
 
 function init() {
     // 从 GM 存储加载持久化状态
@@ -64,6 +65,9 @@ function init() {
 
     S.autoHideBtn = GM_getValue(S.K.AUTO_HIDE_BTN, false);
 
+    S.statusPollOn = GM_getValue(S.K.STATUS_POLL_ON, false);
+    try { S.statusData = JSON.parse(GM_getValue(S.K.STATUS_DATA, 'null')); } catch (e) { S.statusData = null; }
+
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();
@@ -78,6 +82,8 @@ function init() {
     if (S.codeBlockHeightOn) setupCodeBlockHeight();
 
     GM_addStyle('.ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}');
+
+    if (S.statusPollOn) startStatusPoll();
 
     setTimeout(function () { tagMessageRoles(); updateMaxItemKey(); }, 800);
     setTimeout(function () { tagMessageRoles(); updateMaxItemKey(); }, 1800);

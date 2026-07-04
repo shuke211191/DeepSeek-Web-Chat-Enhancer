@@ -9,6 +9,7 @@ import { setupUserCollapse, stopUserCollapse } from './user-collapse';
 import { setupCodeFold, stopCodeFold, setupCodeBlockHeight, stopCodeBlockHeight } from './code-collapse';
 import { t, refreshLang } from './i18n';
 import { exportPreset, importPreset } from './preset';
+import { startStatusPoll, stopStatusPoll, refreshStatus, renderStatusEntry } from './status';
 
 export function syncPanelMode() {
     S.panelMode = getMode();
@@ -37,6 +38,7 @@ function rebindPanelToggles() {
     bindToggle('dse-user-fold-toggle', function (v) { S.autoCollapseUser = v; GM_setValue(S.K.AUTO_COLLAPSE_USER, v); if (v) setupUserCollapse(); else stopUserCollapse(); renderPanelContent(); });
     bindToggle('dse-focus-toggle', function (v) { S.focusInputShortcut = v; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v); });
     bindToggle('dse-autohide-toggle', function (v) { S.autoHideBtn = v; GM_setValue(S.K.AUTO_HIDE_BTN, v); var ui = document.getElementById('dse-ui'); if (ui) { if (v) { ui.classList.add('auto-hide'); } else { ui.classList.remove('auto-hide', 'show'); } } });
+    bindToggle('dse-status-poll-toggle', function (v) { S.statusPollOn = v; GM_setValue(S.K.STATUS_POLL_ON, v); if (v) startStatusPoll(); else stopStatusPoll(); renderPanelContent(); });
 }
 
 function syncPanelLeftToggles() {
@@ -118,6 +120,16 @@ export function renderPanelContent() {
         html += '<div class="dse-sep"></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('快速定位到输入框 (Ctrl+Alt+/)') + '</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-sep"></div><div class="dse-grid"><button id="dse-export-btn" class="dse-preset-btn">' + t('导出预设') + '</button><button id="dse-import-btn" class="dse-preset-btn">' + t('导入预设') + '</button></div><input type="file" id="dse-import-file" accept=".json,application/json" style="display:none">';
+    } else if (S.activePanelTab === 'status') {
+        if (S.statusData) {
+            html += renderStatusEntry();
+        } else {
+            html += '<div style="color:var(--dsw-alias-label-tertiary);text-align:center;padding:20px">' + t('暂无数据') + '</div>';
+        }
+        html += '<div class="dse-sep"></div>';
+        html += '<div style="font-size:11px;color:var(--dsw-alias-label-caption);margin-bottom:8px">' + t('将会访问status.deepseek.com下的内容') + '</div>';
+        html += '<div class="dse-toggler"><label class="tgl">' + t('自动查询服务状态') + '</label><label class="dse-sw"><input id="dse-status-poll-toggle" type="checkbox"' + (S.statusPollOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div style="margin-bottom:10px"><button id="dse-status-refresh" class="dse-preset-btn">' + t('立即刷新') + '</button></div>';
     }
     right.innerHTML = html;
 
@@ -135,6 +147,16 @@ export function renderPanelContent() {
         var importFile = document.getElementById('dse-import-file');
         if (importBtn) importBtn.addEventListener('click', function (e) { e.stopPropagation(); if (importFile) importFile.click(); });
         if (importFile) importFile.addEventListener('change', function () { if (importFile.files && importFile.files[0]) importPreset(importFile.files[0]); });
+    }
+
+    var refreshBtn = document.getElementById('dse-status-refresh');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = t('加载中...');
+            refreshStatus(function () { renderPanelContent(); });
+        });
     }
 }
 
@@ -161,7 +183,7 @@ export function createPanel() {
         '#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}' +
         '#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}' +
         '#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}' +
-        '#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}</style>' +
+        '#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}.dse-status-card{padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;margin-top:6px;}.dse-status-title{font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:6px;line-height:1.4;}.dse-status-time{font-size:11px;color:var(--dsw-alias-label-caption);margin-bottom:10px;}.dse-status-body{font-size:12px;color:var(--dsw-alias-label-primary);line-height:1.6;}.dse-status-body p{margin:4px 0;}.dse-status-body strong{color:var(--dsw-alias-label-secondary);}.dse-status-link{display:inline-block;margin-top:8px;font-size:12px;color:var(--dsw-alias-brand-primary);text-decoration:none;}.dse-status-link:hover{text-decoration:underline;}a.dse-status-title{text-decoration:none;color:var(--dsw-alias-label-primary);display:block;}a.dse-status-title:hover{text-decoration:underline;color:var(--dsw-alias-brand-primary);}</style>' +
         '<div id="dse-panel-left">' +
         '<div class="dse-tab-item on" data-tab="page"><span>' + t('页面配色') + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
         '<div class="dse-tab-item" data-tab="bubble"><span>' + t('消息气泡') + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
@@ -169,6 +191,7 @@ export function createPanel() {
         '<div class="dse-tab-item" data-tab="font"><span>' + t('字体') + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
         '<div class="dse-tab-item" data-tab="avatar"><span>' + t('头像') + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>' +
         '<div class="dse-tab-item" data-tab="lang"><span>' + t('语言') + '</span></div>' +
+        '<div class="dse-tab-item" data-tab="status"><span>' + t('服务状态') + '</span></div>' +
         '<div class="dse-tab-item" data-tab="other"><span>' + t('其他') + '</span></div>' +
         '<div class="dse-sep"></div><button class="dse-rst">' + t('恢复默认') + '</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
@@ -213,13 +236,14 @@ export function createPanel() {
         S.formulaOn = false; S.autoThinkOn = false; S.autoCollapseUser = false;
         S.codeFoldOn = false; S.codeBlockHeightOn = false;
         S.showNotepadBtn = true; S.showDarkBtn = true; S.focusInputShortcut = true; S.autoHideBtn = false;
+        S.statusPollOn = false; S.statusData = null;
         S.fontSrc = 'system'; S.fontName = '';
         S.avatarUName = t('你'); S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
         S.autoThinkMode = 'always'; S.autoThinkDelay = 500;
         S.lang = 'auto';
         S.notepadX = 20; S.notepadY = 100;
-        stopThinkCollapse(); stopUserCollapse(); stopCodeFold(); stopCodeBlockHeight();
+        stopThinkCollapse(); stopUserCollapse(); stopCodeFold(); stopCodeBlockHeight(); stopStatusPoll();
         setupFormulaCopier();
         setAvatarState(false);
         for (var kk in S.K) {

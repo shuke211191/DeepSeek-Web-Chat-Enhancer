@@ -104,6 +104,14 @@ var dict = {
     '头像大小': 'Avatar Size',
     '头像间距': 'Avatar Gap',
 
+    // panel.js - status tab
+    '服务状态': 'Service Status',
+    '自动查询服务状态': 'Auto Poll Status',
+    '立即刷新': 'Refresh Now',
+    '暂无数据': 'No Data',
+    '获取失败': 'Fetch Failed',
+    '加载中...': 'Loading...',
+    '将会访问status.deepseek.com下的内容': 'Accesses content from status.deepseek.com',
     // panel.js - other tab
     '显示笔记按钮': 'Show Notes Button',
     '显示深浅色切换按钮': 'Show Dark Toggle',
@@ -161,7 +169,7 @@ export function refreshLang() {
         userFoldBtns[j].title = t('折叠/展开');
     }
 
-    var tabLabels = { page: '页面配色', bubble: '消息气泡', strongcode: '强调/代码', font: '字体', avatar: '头像', lang: '语言', other: '其他' };
+    var tabLabels = { page: '页面配色', bubble: '消息气泡', strongcode: '强调/代码', font: '字体', avatar: '头像', lang: '语言', status: '服务状态', other: '其他' };
     var items = document.querySelectorAll('#dse-panel-left .dse-tab-item');
     for (var k = 0; k < items.length; k++) {
         var tab = items[k].dataset.tab;

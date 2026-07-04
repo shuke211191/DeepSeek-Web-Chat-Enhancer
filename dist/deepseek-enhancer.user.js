@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.6.3
-// @description  配色+字体+浮动头像+方向键跳转+代码块折叠+中英双语+自动折叠+预设导入导出，模块化版本
+// @version      4.7.0
+// @description  允许修改页面配色、字体等，添加浮动头像、自动折叠、方向键跳转、服务状态查询等等功能，支持中英双语、预设导入导出。
 // @author       hjx
 // @license      MIT
 // @match        https://chat.deepseek.com/*
@@ -10,6 +10,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_xmlhttpRequest
+// @connect      status.deepseek.com
 // @run-at       document-end
 // ==/UserScript==
 // 代码参考
@@ -104,7 +106,9 @@
     CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
     LANG: "dse3_lang",
     FOCUS_INPUT_SHORTCUT: "dse3_fis",
-    AUTO_HIDE_BTN: "dse3_ahb"
+    AUTO_HIDE_BTN: "dse3_ahb",
+    STATUS_POLL_ON: "dse3_spo",
+    STATUS_DATA: "dse3_std"
   };
   var S = {
     pageOn: false,
@@ -164,7 +168,10 @@
     codeBlockHeightOn: false,
     lang: "auto",
     focusInputShortcut: true,
-    autoHideBtn: false
+    autoHideBtn: false,
+    statusPollOn: false,
+    statusData: null,
+    statusTimer: null
   };
   S.K = K;
   function cloneObj(o) {
@@ -780,6 +787,14 @@
     "AI头像图": "AI Avatar Image",
     "头像大小": "Avatar Size",
     "头像间距": "Avatar Gap",
+    // panel.js - status tab
+    "服务状态": "Service Status",
+    "自动查询服务状态": "Auto Poll Status",
+    "立即刷新": "Refresh Now",
+    "暂无数据": "No Data",
+    "获取失败": "Fetch Failed",
+    "加载中...": "Loading...",
+    "将会访问status.deepseek.com下的内容": "Accesses content from status.deepseek.com",
     // panel.js - other tab
     "显示笔记按钮": "Show Notes Button",
     "显示深浅色切换按钮": "Show Dark Toggle",
@@ -832,7 +847,7 @@
     for (var j = 0; j < userFoldBtns.length; j++) {
       userFoldBtns[j].title = t("折叠/展开");
     }
-    var tabLabels = { page: "页面配色", bubble: "消息气泡", strongcode: "强调/代码", font: "字体", avatar: "头像", lang: "语言", other: "其他" };
+    var tabLabels = { page: "页面配色", bubble: "消息气泡", strongcode: "强调/代码", font: "字体", avatar: "头像", lang: "语言", status: "服务状态", other: "其他" };
     var items = document.querySelectorAll("#dse-panel-left .dse-tab-item");
     for (var k = 0; k < items.length; k++) {
       var tab = items[k].dataset.tab;
@@ -1376,6 +1391,84 @@
     };
     reader.readAsText(file, "utf-8");
   }
+  var FEED_URL = "https://status.deepseek.com/feed.atom";
+  var POLL_INTERVAL = 9e5;
+  function parseAndStore(xhr) {
+    try {
+      var parser = new DOMParser();
+      var xml = parser.parseFromString(xhr.responseText, "text/xml");
+      var entry = xml.querySelector("entry");
+      if (!entry) return false;
+      var title = entry.querySelector("title");
+      var updated = entry.querySelector("updated");
+      var summary = entry.querySelector("summary");
+      var link = entry.querySelector('link[rel="alternate"]');
+      S.statusData = {
+        title: title ? title.textContent : "",
+        updated: updated ? updated.textContent : "",
+        summary: summary ? summary.textContent : "",
+        link: link ? link.getAttribute("href") : ""
+      };
+      GM_setValue(S.K.STATUS_DATA, JSON.stringify(S.statusData));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function fetchStatusFeed() {
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: FEED_URL,
+      onload: function(xhr) {
+        parseAndStore(xhr);
+      },
+      onerror: function() {
+      }
+    });
+  }
+  function startStatusPoll() {
+    S.statusPollOn = true;
+    fetchStatusFeed();
+    if (S.statusTimer) clearInterval(S.statusTimer);
+    S.statusTimer = setInterval(fetchStatusFeed, POLL_INTERVAL);
+  }
+  function stopStatusPoll() {
+    S.statusPollOn = false;
+    if (S.statusTimer) {
+      clearInterval(S.statusTimer);
+      S.statusTimer = null;
+    }
+  }
+  function refreshStatus(callback) {
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: FEED_URL,
+      onload: function(xhr) {
+        var ok = parseAndStore(xhr);
+        if (callback) callback(ok);
+      },
+      onerror: function() {
+        if (callback) callback(false);
+      }
+    });
+  }
+  function renderStatusEntry() {
+    if (!S.statusData) return "";
+    var d = S.statusData;
+    var html = '<div class="dse-status-card">';
+    if (d.link) {
+      html += '<a class="dse-status-title" href="' + d.link + '" target="_blank" rel="noopener">' + d.title + "</a>";
+    } else {
+      html += '<div class="dse-status-title">' + d.title + "</div>";
+    }
+    try {
+      html += '<div class="dse-status-time">' + new Date(d.updated).toLocaleString() + "</div>";
+    } catch (e) {
+    }
+    html += '<div class="dse-status-body">' + d.summary + "</div>";
+    html += "</div>";
+    return html;
+  }
   function syncPanelMode() {
     S.panelMode = getMode();
     var panel = document.getElementById("dse-panel");
@@ -1501,6 +1594,13 @@
         }
       }
     });
+    bindToggle("dse-status-poll-toggle", function(v) {
+      S.statusPollOn = v;
+      GM_setValue(S.K.STATUS_POLL_ON, v);
+      if (v) startStatusPoll();
+      else stopStatusPoll();
+      renderPanelContent();
+    });
   }
   function syncPanelLeftToggles() {
     var pageToggle = document.getElementById("dse-page-toggle");
@@ -1573,6 +1673,16 @@
       html += '<div class="dse-sep"></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("快速定位到输入框 (Ctrl+Alt+/)") + '</label><label class="dse-sw"><input id="dse-focus-toggle" type="checkbox"' + (S.focusInputShortcut ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-sep"></div><div class="dse-grid"><button id="dse-export-btn" class="dse-preset-btn">' + t("导出预设") + '</button><button id="dse-import-btn" class="dse-preset-btn">' + t("导入预设") + '</button></div><input type="file" id="dse-import-file" accept=".json,application/json" style="display:none">';
+    } else if (S.activePanelTab === "status") {
+      if (S.statusData) {
+        html += renderStatusEntry();
+      } else {
+        html += '<div style="color:var(--dsw-alias-label-tertiary);text-align:center;padding:20px">' + t("暂无数据") + "</div>";
+      }
+      html += '<div class="dse-sep"></div>';
+      html += '<div style="font-size:11px;color:var(--dsw-alias-label-caption);margin-bottom:8px">' + t("将会访问status.deepseek.com下的内容") + "</div>";
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自动查询服务状态") + '</label><label class="dse-sw"><input id="dse-status-poll-toggle" type="checkbox"' + (S.statusPollOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div style="margin-bottom:10px"><button id="dse-status-refresh" class="dse-preset-btn">' + t("立即刷新") + "</button></div>";
     }
     right.innerHTML = html;
     var modeTabs = right.querySelectorAll(".dse-mode-tab");
@@ -1603,6 +1713,17 @@
         if (importFile.files && importFile.files[0]) importPreset(importFile.files[0]);
       });
     }
+    var refreshBtn = document.getElementById("dse-status-refresh");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = t("加载中...");
+        refreshStatus(function() {
+          renderPanelContent();
+        });
+      });
+    }
   }
   function selectPanelTab(name) {
     S.activePanelTab = name;
@@ -1618,7 +1739,7 @@
     if (existing) return existing;
     var panel = document.createElement("div");
     panel.id = "dse-panel";
-    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:480px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>' + t("页面配色") + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>' + t("消息气泡") + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>' + t("强调/代码") + '</span></div><div class="dse-tab-item" data-tab="font"><span>' + t("字体") + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>' + t("头像") + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="lang"><span>' + t("语言") + '</span></div><div class="dse-tab-item" data-tab="other"><span>' + t("其他") + '</span></div><div class="dse-sep"></div><button class="dse-rst">' + t("恢复默认") + '</button></div><div id="dse-panel-right"></div>';
+    panel.innerHTML = '<style>#dse-panel{position:fixed;bottom:110px;right:68px;z-index:99998;flex-direction:row;background:var(--dsw-alias-bg-layer-2,#fff);border:1px solid var(--dsw-alias-border-l2,#e0e4ea);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);font-family:system-ui,sans-serif;font-size:13px;width:480px;max-height:75vh;overflow:hidden;display:none;}.dark #dse-panel{background:#1e2430;border-color:#3a4050;}#dse-panel-left{flex-shrink:0;width:140px;padding:12px 12px 12px 12px;border-right:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:2px;overflow-y:auto;}#dse-panel-left .dse-tab-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 8px 8px;border-radius:8px;cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:13px;transition:background .15s;user-select:none;}#dse-panel-left .dse-tab-item:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-left .dse-tab-item.on{background:var(--dsw-alias-interactive-bg-hover-solid);color:var(--dsw-alias-label-primary);}#dse-panel-left .dse-sw{position:relative;width:36px;height:18px;flex-shrink:0;}#dse-panel-left .dse-sw input{opacity:0;width:0;height:0;}#dse-panel-left .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:18px;cursor:pointer;transition:.2s;}#dse-panel-left .dse-sl:before{content:"";position:absolute;height:12px;width:12px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel-left input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel-left input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel-left .dse-rst{width:calc(100% - 14px);padding:7px;margin-top:auto;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel-left .dse-rst:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel-right{flex:1;padding:14px;overflow-y:auto;min-width:0;}#dse-panel .dse-mode-tabs{display:flex;gap:4px;margin-bottom:10px;}#dse-panel .dse-mode-tab{flex:1;padding:6px;text-align:center;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary);background:transparent;}#dse-panel .dse-mode-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:var(--dsw-alias-brand-primary);}#dse-panel .dse-r{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px;padding:3px 4px;border-radius:6px;transition:background .15s;}#dse-panel .dse-r:hover{background:var(--dsw-alias-interactive-bg-hover);}#dse-panel .dse-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}#dse-panel .dse-section-label{font-size:11px;color:var(--dsw-alias-label-tertiary);margin:4px 0 2px;letter-spacing:.5px;}#dse-panel .dse-r label{color:var(--dsw-alias-label-secondary);font-size:12.5px;flex-shrink:0;white-space:nowrap;}#dse-panel input[type=color]{width:32px;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0;}#dse-panel .dse-input{width:130px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;padding:3px 6px;font-size:12px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}#dse-panel .dse-toggler{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;padding:4px 0;}#dse-panel .dse-toggler label.tgl{color:var(--dsw-alias-label-primary);font-size:13px;}#dse-panel .dse-sw{position:relative;width:38px;height:20px;flex-shrink:0;}#dse-panel .dse-sw input{opacity:0;width:0;height:0;}#dse-panel .dse-sl{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;cursor:pointer;transition:.2s;}#dse-panel .dse-sl:before{content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}#dse-panel input:checked+.dse-sl{background:var(--dsw-alias-brand-primary,#5686fe);}#dse-panel input:checked+.dse-sl:before{transform:translateX(18px);}#dse-panel .dse-sep{border-top:1px solid var(--dsw-alias-border-l1,#e0e4ea);margin:10px 0;}#dse-panel .dse-preset-btn{width:100%;padding:7px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;text-align:center;}#dse-panel .dse-preset-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}.dse-status-card{padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;margin-top:6px;}.dse-status-title{font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:6px;line-height:1.4;}.dse-status-time{font-size:11px;color:var(--dsw-alias-label-caption);margin-bottom:10px;}.dse-status-body{font-size:12px;color:var(--dsw-alias-label-primary);line-height:1.6;}.dse-status-body p{margin:4px 0;}.dse-status-body strong{color:var(--dsw-alias-label-secondary);}.dse-status-link{display:inline-block;margin-top:8px;font-size:12px;color:var(--dsw-alias-brand-primary);text-decoration:none;}.dse-status-link:hover{text-decoration:underline;}a.dse-status-title{text-decoration:none;color:var(--dsw-alias-label-primary);display:block;}a.dse-status-title:hover{text-decoration:underline;color:var(--dsw-alias-brand-primary);}</style><div id="dse-panel-left"><div class="dse-tab-item on" data-tab="page"><span>' + t("页面配色") + '</span><label class="dse-sw"><input id="dse-page-toggle" type="checkbox"' + (S.pageOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="bubble"><span>' + t("消息气泡") + '</span><label class="dse-sw"><input id="dse-bubble-toggle" type="checkbox"' + (S.bubbleOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="strongcode"><span>' + t("强调/代码") + '</span></div><div class="dse-tab-item" data-tab="font"><span>' + t("字体") + '</span><label class="dse-sw"><input id="dse-font-toggle" type="checkbox"' + (S.fontOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="avatar"><span>' + t("头像") + '</span><label class="dse-sw"><input id="dse-avatar-toggle" type="checkbox"' + (S.avatarOn ? " checked" : "") + '><span class="dse-sl"></span></label></div><div class="dse-tab-item" data-tab="lang"><span>' + t("语言") + '</span></div><div class="dse-tab-item" data-tab="status"><span>' + t("服务状态") + '</span></div><div class="dse-tab-item" data-tab="other"><span>' + t("其他") + '</span></div><div class="dse-sep"></div><button class="dse-rst">' + t("恢复默认") + '</button></div><div id="dse-panel-right"></div>';
     document.body.appendChild(panel);
     panel.querySelectorAll(".dse-tab-item").forEach(function(item) {
       item.addEventListener("click", function(e) {
@@ -1745,6 +1866,8 @@
       S.showDarkBtn = true;
       S.focusInputShortcut = true;
       S.autoHideBtn = false;
+      S.statusPollOn = false;
+      S.statusData = null;
       S.fontSrc = "system";
       S.fontName = "";
       S.avatarUName = t("你");
@@ -1764,6 +1887,7 @@
       stopUserCollapse();
       stopCodeFold();
       stopCodeBlockHeight();
+      stopStatusPoll();
       setupFormulaCopier();
       setAvatarState(false);
       for (var kk in S.K) {
@@ -2254,6 +2378,12 @@
     S.lang = GM_getValue(S.K.LANG, "auto");
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
     S.autoHideBtn = GM_getValue(S.K.AUTO_HIDE_BTN, false);
+    S.statusPollOn = GM_getValue(S.K.STATUS_POLL_ON, false);
+    try {
+      S.statusData = JSON.parse(GM_getValue(S.K.STATUS_DATA, "null"));
+    } catch (e) {
+      S.statusData = null;
+    }
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;
@@ -2272,6 +2402,7 @@
     if (S.codeFoldOn) setupCodeFold();
     if (S.codeBlockHeightOn) setupCodeBlockHeight();
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
+    if (S.statusPollOn) startStatusPoll();
     setTimeout(function() {
       tagMessageRoles();
       updateMaxItemKey();

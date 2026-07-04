@@ -20,6 +20,7 @@ src/
 ├── think-collapse.js 思考块自动折叠系统
 ├── user-collapse.js  用户消息自动折叠
 ├── code-collapse.js  代码块折叠与高度限制
+├── status.js         Atom 订阅源服务状态查询
 ├── i18n.js            中英双语文案系统
 └── header.txt      Tampermonkey 元数据块
 ```
@@ -116,6 +117,14 @@ src/
 - 两个功能各自独立的 `MutationObserver` + 轮询，处理虚拟列表动态渲染
 - 开关位于面板"强调/代码"选项卡底部
 
+### `status.js`
+- `startStatusPoll()` / `stopStatusPoll()` — 启动/停止 15 分钟自动轮询
+- `refreshStatus(callback)` — 手动拉取最新状态，回调通知成功/失败
+- `renderStatusEntry()` — 返回最新事件 HTML（标题链接、时间、summary 原文）
+- 通过 `GM_xmlhttpRequest` GET `https://status.deepseek.com/feed.atom`
+- 使用 `DOMParser` 解析 Atom XML，取首个 `<entry>`
+- 解析结果缓存到 `S.statusData`，持久化到 GM 存储
+
 ### `i18n.js`
 - 导出 `t(str)` — 双语文案获取函数，根据 `S.lang`（`auto`/`zh`/`en`）和 `navigator.language` 返回中文或英文
 - 导出 `getLang()` — 返回 `'zh'` 或 `'en'`，处理 auto 模式下的浏览器语言检测
@@ -152,12 +161,13 @@ main.js
   ├── font.js ────── state
   ├── avatars.js ─── state, utils
   ├── navigation.js ─ state, utils, messages
-  ├── panel.js ───── state, utils, theme, font, avatars, buttons
+  ├── panel.js ───── state, utils, theme, font, avatars, buttons, status
   ├── buttons.js ─── state, utils, messages, theme, font, panel
   ├── observers.js ─ state, utils, messages, theme, avatars, panel
   ├── think-collapse.js ─ state
   ├── user-collapse.js ─ state, i18n
   ├── code-collapse.js ─ state, i18n
+  ├── status.js ─────── state, i18n
   ├── i18n.js ─────── state
   └── header.txt
 ```

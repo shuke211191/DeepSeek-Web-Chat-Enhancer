@@ -87,7 +87,9 @@ export var K = {
     CODE_BLOCK_HEIGHT_ON: 'dse3_cbho',
     LANG: 'dse3_lang',
     FOCUS_INPUT_SHORTCUT: 'dse3_fis',
-    AUTO_HIDE_BTN: 'dse3_ahb'
+    AUTO_HIDE_BTN: 'dse3_ahb',
+    STATUS_POLL_ON: 'dse3_spo',
+    STATUS_DATA: 'dse3_std'
 };
 
 export var S = {
@@ -121,7 +123,10 @@ export var S = {
     codeFoldOn: false, codeBlockHeightOn: false,
     lang: 'auto',
     focusInputShortcut: true,
-    autoHideBtn: false
+    autoHideBtn: false,
+    statusPollOn: false,
+    statusData: null,
+    statusTimer: null
 };
 
 S.K = K;
