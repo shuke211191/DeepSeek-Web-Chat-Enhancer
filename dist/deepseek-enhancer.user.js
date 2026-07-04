@@ -103,7 +103,8 @@
     CODE_FOLD_ON: "dse3_cfon",
     CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
     LANG: "dse3_lang",
-    FOCUS_INPUT_SHORTCUT: "dse3_fis"
+    FOCUS_INPUT_SHORTCUT: "dse3_fis",
+    AUTO_HIDE_BTN: "dse3_ahb"
   };
   var S = {
     pageOn: false,
@@ -162,7 +163,8 @@
     codeFoldOn: false,
     codeBlockHeightOn: false,
     lang: "auto",
-    focusInputShortcut: true
+    focusInputShortcut: true,
+    autoHideBtn: false
   };
   S.K = K;
   function cloneObj(o) {
@@ -788,6 +790,7 @@
     "始终折叠": "Always Fold",
     "思考结束后折叠": "After Thinking",
     "延迟 (ms)": "Delay (ms)",
+    "自动隐藏功能按钮": "Auto-Hide Buttons",
     "快速定位到输入框 (Ctrl+Alt+/)": "Focus Input (Ctrl+Alt+/)",
     "导出预设": "Export Preset",
     "导入预设": "Import Preset",
@@ -1486,6 +1489,18 @@
       S.focusInputShortcut = v;
       GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v);
     });
+    bindToggle("dse-autohide-toggle", function(v) {
+      S.autoHideBtn = v;
+      GM_setValue(S.K.AUTO_HIDE_BTN, v);
+      var ui = document.getElementById("dse-ui");
+      if (ui) {
+        if (v) {
+          ui.classList.add("auto-hide");
+        } else {
+          ui.classList.remove("auto-hide", "show");
+        }
+      }
+    });
   }
   function syncPanelLeftToggles() {
     var pageToggle = document.getElementById("dse-page-toggle");
@@ -1544,6 +1559,7 @@
       html += '<div class="dse-r"><label>' + t("头像大小") + '</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + "px</span></div>";
       html += '<div class="dse-r"><label>' + t("头像间距") + '</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + "px</span></div>";
     } else if (S.activePanelTab === "other") {
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自动隐藏功能按钮") + '</label><label class="dse-sw"><input id="dse-autohide-toggle" type="checkbox"' + (S.autoHideBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("显示笔记按钮") + '</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("显示深浅色切换按钮") + '</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-sep"></div>';
@@ -1728,6 +1744,7 @@
       S.showNotepadBtn = true;
       S.showDarkBtn = true;
       S.focusInputShortcut = true;
+      S.autoHideBtn = false;
       S.fontSrc = "system";
       S.fontName = "";
       S.avatarUName = t("你");
@@ -1763,6 +1780,8 @@
         S.notepadPanel.style.left = S.notepadX + "px";
         S.notepadPanel.style.top = S.notepadY + "px";
       }
+      var ui = document.getElementById("dse-ui");
+      if (ui) ui.classList.remove("auto-hide", "show");
       syncPanelMode();
       applyTheme(getMode());
       loadFont();
@@ -2027,7 +2046,7 @@
     if (document.getElementById("dse-ui")) return;
     var el = document.createElement("div");
     el.id = "dse-ui";
-    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}</style><button data-t="original" title="' + t("原版") + '" class="on">' + t("原") + '</button><button id="dse-panel-trigger" title="' + t("自定义") + '">⚙</button><button id="dse-notepad-trigger" title="' + t("笔记") + '" style="' + (S.showNotepadBtn ? "" : "display:none;") + '">📝</button><button id="dse-dark-toggle" title="' + t("深色/浅色") + '" style="' + (S.showDarkBtn ? "" : "display:none;") + '">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
+    el.innerHTML = '<style>#dse-ui{position:fixed;bottom:110px;right:16px;z-index:99997;display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;}#dse-ui button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,0.3);background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#333;line-height:1;}.dark #dse-ui button{background:rgba(30,35,45,0.85);color:#ccc;}#dse-ui button:hover{transform:scale(1.1);border-color:#5686fe;}#dse-ui button.on{border-color:#5686fe!important;box-shadow:0 0 0 2px rgba(86,134,254,0.4)!important;background:rgba(86,134,254,0.15)!important;}#dse-ui.auto-hide{opacity:0;pointer-events:none;transition:opacity 0.3s ease;}#dse-ui.auto-hide.show{opacity:1;pointer-events:auto;}#dse-zone{position:fixed;bottom:0;right:0;width:200px;height:240px;z-index:99996;}</style><button data-t="original" title="' + t("原版") + '" class="on">' + t("原") + '</button><button id="dse-panel-trigger" title="' + t("自定义") + '">⚙</button><button id="dse-notepad-trigger" title="' + t("笔记") + '" style="' + (S.showNotepadBtn ? "" : "display:none;") + '">📝</button><button id="dse-dark-toggle" title="' + t("深色/浅色") + '" style="' + (S.showDarkBtn ? "" : "display:none;") + '">' + (getMode() === "dark" ? "☀" : "🌙") + "</button>";
     document.body.appendChild(el);
     el.addEventListener("click", function(e) {
       var btn = e.target.closest("button");
@@ -2089,6 +2108,16 @@
       updateUI();
     });
     updateUI();
+    var zone = document.createElement("div");
+    zone.id = "dse-zone";
+    document.body.appendChild(zone);
+    zone.addEventListener("mouseenter", function() {
+      if (S.autoHideBtn) el.classList.add("show");
+    });
+    zone.addEventListener("mouseleave", function() {
+      if (S.autoHideBtn) el.classList.remove("show");
+    });
+    if (S.autoHideBtn) el.classList.add("auto-hide");
   }
   function waitForScrollContainer(cb) {
     var t2 = 0;
@@ -2224,6 +2253,7 @@
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
     S.lang = GM_getValue(S.K.LANG, "auto");
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
+    S.autoHideBtn = GM_getValue(S.K.AUTO_HIDE_BTN, false);
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;

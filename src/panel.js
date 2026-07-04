@@ -36,6 +36,7 @@ function rebindPanelToggles() {
     bindToggle('dse-code-height-toggle', function (v) { S.codeBlockHeightOn = v; GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, v); if (v) setupCodeBlockHeight(); else stopCodeBlockHeight(); renderPanelContent(); });
     bindToggle('dse-user-fold-toggle', function (v) { S.autoCollapseUser = v; GM_setValue(S.K.AUTO_COLLAPSE_USER, v); if (v) setupUserCollapse(); else stopUserCollapse(); renderPanelContent(); });
     bindToggle('dse-focus-toggle', function (v) { S.focusInputShortcut = v; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, v); });
+    bindToggle('dse-autohide-toggle', function (v) { S.autoHideBtn = v; GM_setValue(S.K.AUTO_HIDE_BTN, v); var ui = document.getElementById('dse-ui'); if (ui) { if (v) { ui.classList.add('auto-hide'); } else { ui.classList.remove('auto-hide', 'show'); } } });
 }
 
 function syncPanelLeftToggles() {
@@ -103,6 +104,7 @@ export function renderPanelContent() {
         html += '<div class="dse-r"><label>' + t('头像大小') + '</label><input id="dse-avatar-size" type="range" min="16" max="128" step="4" value="' + (S.avatarSize || 30) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarSize || 30) + 'px</span></div>';
         html += '<div class="dse-r"><label>' + t('头像间距') + '</label><input id="dse-avatar-gap" type="range" min="4" max="64" step="2" value="' + (S.avatarGap || 12) + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + (S.avatarGap || 12) + 'px</span></div>';
     } else if (S.activePanelTab === 'other') {
+        html += '<div class="dse-toggler"><label class="tgl">' + t('自动隐藏功能按钮') + '</label><label class="dse-sw"><input id="dse-autohide-toggle" type="checkbox"' + (S.autoHideBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('显示笔记按钮') + '</label><label class="dse-sw"><input id="dse-npbtn-toggle" type="checkbox"' + (S.showNotepadBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('显示深浅色切换按钮') + '</label><label class="dse-sw"><input id="dse-darkbtn-toggle" type="checkbox"' + (S.showDarkBtn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-sep"></div>';
@@ -210,7 +212,7 @@ export function createPanel() {
         S.nativeOn = false; S.fontOn = false; S.avatarOn = false;
         S.formulaOn = false; S.autoThinkOn = false; S.autoCollapseUser = false;
         S.codeFoldOn = false; S.codeBlockHeightOn = false;
-        S.showNotepadBtn = true; S.showDarkBtn = true; S.focusInputShortcut = true;
+        S.showNotepadBtn = true; S.showDarkBtn = true; S.focusInputShortcut = true; S.autoHideBtn = false;
         S.fontSrc = 'system'; S.fontName = '';
         S.avatarUName = t('你'); S.avatarAName = 'DeepSeek'; S.avatarUC = '#5686fe'; S.avatarAC = '#10a37f';
         S.avatarSize = 64; S.avatarUserImg = ''; S.avatarAIImg = 'https://www.deepseek.com/favicon.ico'; S.avatarGap = 32;
@@ -227,6 +229,7 @@ export function createPanel() {
             try { GM_deleteValue(sk); } catch (ex) { GM_setValue(sk, null); }
         }
         if (S.notepadPanel) { S.notepadPanel.style.left = S.notepadX + 'px'; S.notepadPanel.style.top = S.notepadY + 'px'; }
+        var ui = document.getElementById('dse-ui'); if (ui) ui.classList.remove('auto-hide', 'show');
         syncPanelMode(); applyTheme(getMode()); loadFont(); updateUI(); applyAvatarSettings(); applyAvatarSize(); refreshLang();
     });
 

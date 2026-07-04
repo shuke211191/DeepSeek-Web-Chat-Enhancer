@@ -62,6 +62,8 @@ function init() {
 
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
 
+    S.autoHideBtn = GM_getValue(S.K.AUTO_HIDE_BTN, false);
+
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();

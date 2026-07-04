@@ -114,6 +114,7 @@ var dict = {
     '始终折叠': 'Always Fold',
     '思考结束后折叠': 'After Thinking',
     '延迟 (ms)': 'Delay (ms)',
+    '自动隐藏功能按钮': 'Auto-Hide Buttons',
     '快速定位到输入框 (Ctrl+Alt+/)': 'Focus Input (Ctrl+Alt+/)',
     '导出预设': 'Export Preset',
     '导入预设': 'Import Preset',

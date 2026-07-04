@@ -86,7 +86,8 @@ export var K = {
     CODE_FOLD_ON: 'dse3_cfon',
     CODE_BLOCK_HEIGHT_ON: 'dse3_cbho',
     LANG: 'dse3_lang',
-    FOCUS_INPUT_SHORTCUT: 'dse3_fis'
+    FOCUS_INPUT_SHORTCUT: 'dse3_fis',
+    AUTO_HIDE_BTN: 'dse3_ahb'
 };
 
 export var S = {
@@ -119,7 +120,8 @@ export var S = {
     autoCollapseUser: false,
     codeFoldOn: false, codeBlockHeightOn: false,
     lang: 'auto',
-    focusInputShortcut: true
+    focusInputShortcut: true,
+    autoHideBtn: false
 };
 
 S.K = K;
