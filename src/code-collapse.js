@@ -43,6 +43,13 @@ function addFoldButton(block) {
         }
     });
 
+    if (S.autoCollapseCode) {
+        pre.style.display = 'none';
+        btn.innerHTML = '\u25B8';
+        btn.title = t('展开代码');
+        collapsed = true;
+    }
+
     container.insertBefore(btn, firstBtn);
 }
 
@@ -104,6 +111,14 @@ export function setupCodeBlockHeight() {
     if (heightPollTimer) clearTimeout(heightPollTimer);
     function poll() { if (!S.codeBlockHeightOn) return; processHeightAll(); heightPollTimer = setTimeout(poll, POLL_MS); }
     heightPollTimer = setTimeout(poll, 3000);
+}
+
+export function setupAutoCollapseCode() {
+    if (!S.autoCollapseCode || !S.codeFoldOn) return;
+    var btns = document.querySelectorAll('.dse-code-fold-btn');
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].innerHTML === '\u25BE') btns[i].click();
+    }
 }
 
 export function stopCodeBlockHeight() {

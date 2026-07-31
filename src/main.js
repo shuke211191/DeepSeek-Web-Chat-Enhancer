@@ -11,7 +11,7 @@ import { setNotepadState } from './notepad';
 import { setupFormulaCopier } from './formula';
 import { setupThinkCollapse } from './think-collapse';
 import { setupUserCollapse } from './user-collapse';
-import { setupCodeFold, setupCodeBlockHeight } from './code-collapse';
+import { setupCodeFold, setupAutoCollapseCode, setupCodeBlockHeight } from './code-collapse';
 import { startStatusPoll } from './status';
 
 function init() {
@@ -57,6 +57,7 @@ function init() {
     S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
 
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
+    S.autoCollapseCode = GM_getValue(S.K.AUTO_COLLAPSE_CODE, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
 
     S.lang = GM_getValue(S.K.LANG, 'auto');
@@ -78,7 +79,7 @@ function init() {
     setupFormulaCopier();
     if (S.autoThinkOn) setupThinkCollapse();
     if (S.autoCollapseUser) setupUserCollapse();
-    if (S.codeFoldOn) setupCodeFold();
+    if (S.codeFoldOn) { setupCodeFold(); if (S.autoCollapseCode) setupAutoCollapseCode(); }
     if (S.codeBlockHeightOn) setupCodeBlockHeight();
 
     GM_addStyle('.ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}');

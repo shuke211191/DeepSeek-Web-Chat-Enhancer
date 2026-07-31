@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.7.0
+// @version      4.7.1
 // @description  允许修改页面配色、字体等，添加浮动头像、自动折叠、方向键跳转、服务状态查询等等功能，支持中英双语、预设导入导出。
 // @author       hjx
 // @license      MIT
@@ -103,6 +103,7 @@
     AUTO_THINK_DELAY: "dse3_atdy",
     AUTO_COLLAPSE_USER: "dse3_acu",
     CODE_FOLD_ON: "dse3_cfon",
+    AUTO_COLLAPSE_CODE: "dse3_acc",
     CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
     LANG: "dse3_lang",
     FOCUS_INPUT_SHORTCUT: "dse3_fis",
@@ -165,6 +166,7 @@
     autoThinkDelay: 500,
     autoCollapseUser: false,
     codeFoldOn: false,
+    autoCollapseCode: false,
     codeBlockHeightOn: false,
     lang: "auto",
     focusInputShortcut: true,
@@ -704,6 +706,7 @@
     // code-collapse.js
     "折叠代码": "Fold Code",
     "展开代码": "Unfold Code",
+    "自动折叠代码块": "Auto-Collapse Code Blocks",
     // formula.js
     "双击复制 LaTeX": "Double-click to copy LaTeX",
     "已复制 LaTeX": "LaTeX copied",
@@ -1220,6 +1223,12 @@
         collapsed = true;
       }
     });
+    if (S.autoCollapseCode) {
+      pre.style.display = "none";
+      btn.innerHTML = "▸";
+      btn.title = t("展开代码");
+      collapsed = true;
+    }
     container.insertBefore(btn, firstBtn);
   }
   function processFoldAll() {
@@ -1299,6 +1308,13 @@
       heightPollTimer = setTimeout(poll, POLL_MS);
     }
     heightPollTimer = setTimeout(poll, 3e3);
+  }
+  function setupAutoCollapseCode() {
+    if (!S.autoCollapseCode || !S.codeFoldOn) return;
+    var btns = document.querySelectorAll(".dse-code-fold-btn");
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].innerHTML === "▾") btns[i].click();
+    }
   }
   function stopCodeBlockHeight() {
     if (heightObserver) {
@@ -1560,8 +1576,16 @@
     bindToggle("dse-code-fold-toggle", function(v) {
       S.codeFoldOn = v;
       GM_setValue(S.K.CODE_FOLD_ON, v);
-      if (v) setupCodeFold();
-      else stopCodeFold();
+      if (v) {
+        setupCodeFold();
+        if (S.autoCollapseCode) setupAutoCollapseCode();
+      } else stopCodeFold();
+      renderPanelContent();
+    });
+    bindToggle("dse-auto-collapse-code-toggle", function(v) {
+      S.autoCollapseCode = v;
+      GM_setValue(S.K.AUTO_COLLAPSE_CODE, v);
+      if (v && S.codeFoldOn) setupAutoCollapseCode();
       renderPanelContent();
     });
     bindToggle("dse-code-height-toggle", function(v) {
@@ -1641,6 +1665,7 @@
       html += '<div id="dse-code-rows" style="' + (S.codeOn ? "" : "display:none") + '"><div class="dse-grid">' + colorRow("bgL", "背景(浅)", "code") + colorRow("bgD", "背景(深)", "code") + colorRow("textL", "文字(浅)", "code") + colorRow("textD", "文字(深)", "code") + "</div></div>";
       html += '<div class="dse-sep"></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("启用代码块折叠") + '</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-toggler"><label class="tgl">' + t("自动折叠代码块") + '</label><label class="dse-sw"><input id="dse-auto-collapse-code-toggle" type="checkbox"' + (S.autoCollapseCode ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("限制代码块高度") + '</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
     } else if (S.activePanelTab === "lang") {
       html += '<div class="dse-r"><label>' + t("界面语言") + '</label><select id="dse-lang" class="dse-input"><option value="auto"' + (S.lang === "auto" ? " selected" : "") + ">" + t("自动") + '</option><option value="zh"' + (S.lang === "zh" ? " selected" : "") + '>中文</option><option value="en"' + (S.lang === "en" ? " selected" : "") + ">English</option></select></div>";
@@ -1861,6 +1886,7 @@
       S.autoThinkOn = false;
       S.autoCollapseUser = false;
       S.codeFoldOn = false;
+      S.autoCollapseCode = false;
       S.codeBlockHeightOn = false;
       S.showNotepadBtn = true;
       S.showDarkBtn = true;
@@ -2216,6 +2242,8 @@
         S.codeFoldOn = false;
         GM_setValue(S.K.CODE_FOLD_ON, false);
         stopCodeFold();
+        S.autoCollapseCode = false;
+        GM_setValue(S.K.AUTO_COLLAPSE_CODE, false);
         S.codeBlockHeightOn = false;
         GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
         stopCodeBlockHeight();
@@ -2374,6 +2402,7 @@
     S.autoThinkDelay = GM_getValue(S.K.AUTO_THINK_DELAY, 500);
     S.autoCollapseUser = GM_getValue(S.K.AUTO_COLLAPSE_USER, false);
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
+    S.autoCollapseCode = GM_getValue(S.K.AUTO_COLLAPSE_CODE, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
     S.lang = GM_getValue(S.K.LANG, "auto");
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
@@ -2399,7 +2428,10 @@
     setupFormulaCopier();
     if (S.autoThinkOn) setupThinkCollapse();
     if (S.autoCollapseUser) setupUserCollapse();
-    if (S.codeFoldOn) setupCodeFold();
+    if (S.codeFoldOn) {
+      setupCodeFold();
+      if (S.autoCollapseCode) setupAutoCollapseCode();
+    }
     if (S.codeBlockHeightOn) setupCodeBlockHeight();
     GM_addStyle(".ds-enhancer-page [data-virtual-list-item-key],.ds-enhancer-bubble [data-virtual-list-item-key],.ds-enhancer-sc [data-virtual-list-item-key]{min-height:0;}");
     if (S.statusPollOn) startStatusPoll();

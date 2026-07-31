@@ -11,6 +11,7 @@ var dict = {
     // code-collapse.js
     '折叠代码': 'Fold Code',
     '展开代码': 'Unfold Code',
+    '自动折叠代码块': 'Auto-Collapse Code Blocks',
 
     // formula.js
     '双击复制 LaTeX': 'Double-click to copy LaTeX',

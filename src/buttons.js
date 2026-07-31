@@ -37,6 +37,7 @@ export function createSwitcher() {
             S.autoThinkOn = false; GM_setValue(S.K.AUTO_THINK_ON, false); stopThinkCollapse();
             S.autoCollapseUser = false; GM_setValue(S.K.AUTO_COLLAPSE_USER, false); stopUserCollapse();
             S.codeFoldOn = false; GM_setValue(S.K.CODE_FOLD_ON, false); stopCodeFold();
+            S.autoCollapseCode = false; GM_setValue(S.K.AUTO_COLLAPSE_CODE, false);
             S.codeBlockHeightOn = false; GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, false); stopCodeBlockHeight();
             S.focusInputShortcut = true; GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, true);
             applyTheme(getMode()); tagMessageRoles(); loadFont(); updateUI();
