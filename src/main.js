@@ -59,6 +59,7 @@ function init() {
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
     S.autoCollapseCode = GM_getValue(S.K.AUTO_COLLAPSE_CODE, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
+    S.codeBlockHeightValue = GM_getValue(S.K.CODE_BLOCK_HEIGHT_VALUE, 60);
 
     S.lang = GM_getValue(S.K.LANG, 'auto');
 

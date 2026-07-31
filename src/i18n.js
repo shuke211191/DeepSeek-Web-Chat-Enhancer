@@ -12,6 +12,7 @@ var dict = {
     '折叠代码': 'Fold Code',
     '展开代码': 'Unfold Code',
     '自动折叠代码块': 'Auto-Collapse Code Blocks',
+    '代码块最大高度': 'Code Block Max Height',
 
     // formula.js
     '双击复制 LaTeX': 'Double-click to copy LaTeX',

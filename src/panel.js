@@ -6,7 +6,7 @@ import { setAvatarState, applyAvatarSettings, applyAvatarSize, scheduleAvatarUpd
 import { setupFormulaCopier } from './formula';
 import { setupThinkCollapse, resetThinkCollapse, stopThinkCollapse } from './think-collapse';
 import { setupUserCollapse, stopUserCollapse } from './user-collapse';
-import { setupCodeFold, stopCodeFold, setupAutoCollapseCode, setupCodeBlockHeight, stopCodeBlockHeight } from './code-collapse';
+import { setupCodeFold, stopCodeFold, setupAutoCollapseCode, setupCodeBlockHeight, stopCodeBlockHeight, updateCodeBlockHeightValue } from './code-collapse';
 import { t, refreshLang } from './i18n';
 import { exportPreset, importPreset } from './preset';
 import { startStatusPoll, stopStatusPoll, refreshStatus, renderStatusEntry } from './status';
@@ -86,6 +86,7 @@ export function renderPanelContent() {
         html += '<div class="dse-toggler"><label class="tgl">' + t('启用代码块折叠') + '</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('自动折叠代码块') + '</label><label class="dse-sw"><input id="dse-auto-collapse-code-toggle" type="checkbox"' + (S.autoCollapseCode ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
         html += '<div class="dse-toggler"><label class="tgl">' + t('限制代码块高度') + '</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? ' checked' : '') + '><span class="dse-sl"></span></label></div>';
+        html += '<div class="dse-r"><label>' + t('代码块最大高度') + '</label><input id="dse-code-height-val" type="range" min="0" max="80" step="5" value="' + S.codeBlockHeightValue + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + S.codeBlockHeightValue + 'vh</span></div>';
     } else if (S.activePanelTab === 'lang') {
         html += '<div class="dse-r"><label>' + t('界面语言') + '</label>' +
             '<select id="dse-lang" class="dse-input">' +
@@ -223,6 +224,7 @@ export function createPanel() {
         if (e.target.id === 'dse-avatar-aimg') { S.avatarAIImg = e.target.value; GM_setValue(S.K.AVATAR_AIMG, S.avatarAIImg); applyAvatarSettings(); }
         if (e.target.id === 'dse-avatar-size') { S.avatarSize = parseInt(e.target.value, 10) || 30; GM_setValue(S.K.AVATAR_SIZE, S.avatarSize); applyAvatarSize(); var s = e.target.nextElementSibling; if (s) s.textContent = S.avatarSize + 'px'; }
         if (e.target.id === 'dse-avatar-gap') { S.avatarGap = parseInt(e.target.value, 10) || 12; GM_setValue(S.K.AVATAR_GAP, S.avatarGap); scheduleAvatarUpdate(); var g = e.target.nextElementSibling; if (g) g.textContent = S.avatarGap + 'px'; }
+        if (e.target.id === 'dse-code-height-val') { S.codeBlockHeightValue = parseInt(e.target.value, 10) || 60; GM_setValue(S.K.CODE_BLOCK_HEIGHT_VALUE, S.codeBlockHeightValue); updateCodeBlockHeightValue(); var s2 = e.target.nextElementSibling; if (s2) s2.textContent = S.codeBlockHeightValue + 'vh'; }
         if (e.target.id === 'dse-think-mode') { S.autoThinkMode = e.target.value; GM_setValue(S.K.AUTO_THINK_MODE, S.autoThinkMode); renderPanelContent(); resetThinkCollapse(); }
         if (e.target.id === 'dse-think-delay') { var v = parseInt(e.target.value, 10); S.autoThinkDelay = isNaN(v) || v < 0 ? 0 : Math.min(v, 10000); GM_setValue(S.K.AUTO_THINK_DELAY, S.autoThinkDelay); }
         if (e.target.id === 'dse-lang') { S.lang = e.target.value; GM_setValue(S.K.LANG, S.lang); refreshLang(); renderPanelContent(); }
@@ -236,7 +238,7 @@ export function createPanel() {
         S.pageOn = false; S.bubbleOn = false; S.strongOn = false; S.codeOn = false;
         S.nativeOn = false; S.fontOn = false; S.avatarOn = false;
         S.formulaOn = false; S.autoThinkOn = false; S.autoCollapseUser = false;
-        S.codeFoldOn = false; S.autoCollapseCode = false; S.codeBlockHeightOn = false;
+        S.codeFoldOn = false; S.autoCollapseCode = false; S.codeBlockHeightOn = false; S.codeBlockHeightValue = 60;
         S.showNotepadBtn = true; S.showDarkBtn = true; S.focusInputShortcut = true; S.autoHideBtn = false;
         S.statusPollOn = false; S.statusData = null;
         S.fontSrc = 'system'; S.fontName = '';

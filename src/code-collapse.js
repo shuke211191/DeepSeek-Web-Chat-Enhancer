@@ -103,7 +103,13 @@ function removeHeightLimits() {
 
 export function setupCodeBlockHeight() {
     if (!S.codeBlockHeightOn) return;
-    GM_addStyle('.dse-code-block-limited{max-height:60vh!important;overflow-y:auto!important;}');
+    var style = document.getElementById('dse-code-height-style');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'dse-code-height-style';
+        style.textContent = '.dse-code-block-limited{max-height:' + S.codeBlockHeightValue + 'vh!important;overflow-y:auto!important;}';
+        document.head.appendChild(style);
+    }
     if (heightObserver) { try { heightObserver.disconnect(); } catch (e) {} }
     heightObserver = new MutationObserver(processHeightAll);
     heightObserver.observe(document.body, { childList: true, subtree: true });
@@ -111,6 +117,12 @@ export function setupCodeBlockHeight() {
     if (heightPollTimer) clearTimeout(heightPollTimer);
     function poll() { if (!S.codeBlockHeightOn) return; processHeightAll(); heightPollTimer = setTimeout(poll, POLL_MS); }
     heightPollTimer = setTimeout(poll, 3000);
+}
+
+export function updateCodeBlockHeightValue() {
+    var style = document.getElementById('dse-code-height-style');
+    if (!style) return;
+    style.textContent = '.dse-code-block-limited{max-height:' + S.codeBlockHeightValue + 'vh!important;overflow-y:auto!important;}';
 }
 
 export function setupAutoCollapseCode() {
@@ -124,5 +136,7 @@ export function setupAutoCollapseCode() {
 export function stopCodeBlockHeight() {
     if (heightObserver) { try { heightObserver.disconnect(); } catch (e) {} heightObserver = null; }
     if (heightPollTimer) { clearTimeout(heightPollTimer); heightPollTimer = null; }
+    var style = document.getElementById('dse-code-height-style');
+    if (style) style.remove();
     removeHeightLimits();
 }

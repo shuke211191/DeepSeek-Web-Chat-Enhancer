@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.7.1
+// @version      4.7.2
 // @description  允许修改页面配色、字体等，添加浮动头像、自动折叠、方向键跳转、服务状态查询等等功能，支持中英双语、预设导入导出。
 // @author       hjx
 // @license      MIT

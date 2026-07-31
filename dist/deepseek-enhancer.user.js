@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.7.1
+// @version      4.7.2
 // @description  允许修改页面配色、字体等，添加浮动头像、自动折叠、方向键跳转、服务状态查询等等功能，支持中英双语、预设导入导出。
 // @author       hjx
 // @license      MIT
@@ -105,6 +105,7 @@
     CODE_FOLD_ON: "dse3_cfon",
     AUTO_COLLAPSE_CODE: "dse3_acc",
     CODE_BLOCK_HEIGHT_ON: "dse3_cbho",
+    CODE_BLOCK_HEIGHT_VALUE: "dse3_cbhv",
     LANG: "dse3_lang",
     FOCUS_INPUT_SHORTCUT: "dse3_fis",
     AUTO_HIDE_BTN: "dse3_ahb",
@@ -168,6 +169,7 @@
     codeFoldOn: false,
     autoCollapseCode: false,
     codeBlockHeightOn: false,
+    codeBlockHeightValue: 60,
     lang: "auto",
     focusInputShortcut: true,
     autoHideBtn: false,
@@ -707,6 +709,7 @@
     "折叠代码": "Fold Code",
     "展开代码": "Unfold Code",
     "自动折叠代码块": "Auto-Collapse Code Blocks",
+    "代码块最大高度": "Code Block Max Height",
     // formula.js
     "双击复制 LaTeX": "Double-click to copy LaTeX",
     "已复制 LaTeX": "LaTeX copied",
@@ -1291,7 +1294,13 @@
   }
   function setupCodeBlockHeight() {
     if (!S.codeBlockHeightOn) return;
-    GM_addStyle(".dse-code-block-limited{max-height:60vh!important;overflow-y:auto!important;}");
+    var style = document.getElementById("dse-code-height-style");
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "dse-code-height-style";
+      style.textContent = ".dse-code-block-limited{max-height:" + S.codeBlockHeightValue + "vh!important;overflow-y:auto!important;}";
+      document.head.appendChild(style);
+    }
     if (heightObserver) {
       try {
         heightObserver.disconnect();
@@ -1308,6 +1317,11 @@
       heightPollTimer = setTimeout(poll, POLL_MS);
     }
     heightPollTimer = setTimeout(poll, 3e3);
+  }
+  function updateCodeBlockHeightValue() {
+    var style = document.getElementById("dse-code-height-style");
+    if (!style) return;
+    style.textContent = ".dse-code-block-limited{max-height:" + S.codeBlockHeightValue + "vh!important;overflow-y:auto!important;}";
   }
   function setupAutoCollapseCode() {
     if (!S.autoCollapseCode || !S.codeFoldOn) return;
@@ -1328,6 +1342,8 @@
       clearTimeout(heightPollTimer);
       heightPollTimer = null;
     }
+    var style = document.getElementById("dse-code-height-style");
+    if (style) style.remove();
     removeHeightLimits();
   }
   var EXCLUDE_KEYS = {
@@ -1667,6 +1683,7 @@
       html += '<div class="dse-toggler"><label class="tgl">' + t("启用代码块折叠") + '</label><label class="dse-sw"><input id="dse-code-fold-toggle" type="checkbox"' + (S.codeFoldOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("自动折叠代码块") + '</label><label class="dse-sw"><input id="dse-auto-collapse-code-toggle" type="checkbox"' + (S.autoCollapseCode ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
       html += '<div class="dse-toggler"><label class="tgl">' + t("限制代码块高度") + '</label><label class="dse-sw"><input id="dse-code-height-toggle" type="checkbox"' + (S.codeBlockHeightOn ? " checked" : "") + '><span class="dse-sl"></span></label></div>';
+      html += '<div class="dse-r"><label>' + t("代码块最大高度") + '</label><input id="dse-code-height-val" type="range" min="0" max="80" step="5" value="' + S.codeBlockHeightValue + '" style="width:120px"><span style="font-size:11px;color:var(--dsw-alias-label-secondary);margin-left:4px">' + S.codeBlockHeightValue + "vh</span></div>";
     } else if (S.activePanelTab === "lang") {
       html += '<div class="dse-r"><label>' + t("界面语言") + '</label><select id="dse-lang" class="dse-input"><option value="auto"' + (S.lang === "auto" ? " selected" : "") + ">" + t("自动") + '</option><option value="zh"' + (S.lang === "zh" ? " selected" : "") + '>中文</option><option value="en"' + (S.lang === "en" ? " selected" : "") + ">English</option></select></div>";
     } else if (S.activePanelTab === "font") {
@@ -1851,6 +1868,13 @@
         var g = e.target.nextElementSibling;
         if (g) g.textContent = S.avatarGap + "px";
       }
+      if (e.target.id === "dse-code-height-val") {
+        S.codeBlockHeightValue = parseInt(e.target.value, 10) || 60;
+        GM_setValue(S.K.CODE_BLOCK_HEIGHT_VALUE, S.codeBlockHeightValue);
+        updateCodeBlockHeightValue();
+        var s2 = e.target.nextElementSibling;
+        if (s2) s2.textContent = S.codeBlockHeightValue + "vh";
+      }
       if (e.target.id === "dse-think-mode") {
         S.autoThinkMode = e.target.value;
         GM_setValue(S.K.AUTO_THINK_MODE, S.autoThinkMode);
@@ -1888,6 +1912,7 @@
       S.codeFoldOn = false;
       S.autoCollapseCode = false;
       S.codeBlockHeightOn = false;
+      S.codeBlockHeightValue = 60;
       S.showNotepadBtn = true;
       S.showDarkBtn = true;
       S.focusInputShortcut = true;
@@ -2247,6 +2272,8 @@
         S.codeBlockHeightOn = false;
         GM_setValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
         stopCodeBlockHeight();
+        S.codeBlockHeightValue = 60;
+        GM_setValue(S.K.CODE_BLOCK_HEIGHT_VALUE, 60);
         S.focusInputShortcut = true;
         GM_setValue(S.K.FOCUS_INPUT_SHORTCUT, true);
         applyTheme(getMode());
@@ -2404,6 +2431,7 @@
     S.codeFoldOn = GM_getValue(S.K.CODE_FOLD_ON, false);
     S.autoCollapseCode = GM_getValue(S.K.AUTO_COLLAPSE_CODE, false);
     S.codeBlockHeightOn = GM_getValue(S.K.CODE_BLOCK_HEIGHT_ON, false);
+    S.codeBlockHeightValue = GM_getValue(S.K.CODE_BLOCK_HEIGHT_VALUE, 60);
     S.lang = GM_getValue(S.K.LANG, "auto");
     S.focusInputShortcut = GM_getValue(S.K.FOCUS_INPUT_SHORTCUT, true);
     S.autoHideBtn = GM_getValue(S.K.AUTO_HIDE_BTN, false);
