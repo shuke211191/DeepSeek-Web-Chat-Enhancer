@@ -47,9 +47,11 @@
 - 开关使用 `cloneNode(true)` + `replaceChild` + `addEventListener('change')` 模式重新绑定
 
 ### DeepSeek 主题
-- 深色模式：`body.classList.toggle('dark')` + `data-ds-dark-theme` 属性
+- 站点主题偏好存在 localStorage 的 `__appKit_@deepseek/chat_themePreference`（`{"value":"system"|"light"|"dark","__version":"0"}`），站点启动时按该值重设 body
+- body 状态：`light`/`dark` 类**互斥**（不可并存）+ 深色时 `data-ds-dark-theme="dark"`；站点 CSS 用存在性选择器 `[data-ds-dark-theme]`，但属性值仍需写 `dark` 保持一致
+- **切换深浅色必须写回该键**（`site-theme.js` → `setSiteTheme`），只改 class 不持久化，刷新后站点会覆盖
 - 自定义配色：覆盖 `--dsw-alias-*` CSS 变量（`theme.js` → `buildPageCSS`）
-- `body.dark` 变化后 `MutationObserver` 自动重新应用主题
+- `body` 的 `class` 变化后 `MutationObserver` 自动重新应用主题（`observers.js` → `setupBodyObserver`）
 
 ## 测试
 - 无自动化测试。手动将 `dist/deepseek-enhancer.user.js` 安装到 Tampermonkey → 在 `chat.deepseek.com` 验证

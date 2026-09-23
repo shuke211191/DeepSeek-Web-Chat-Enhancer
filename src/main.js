@@ -2,6 +2,7 @@ import { S, DEF, NATIVE_DEF } from './state';
 import { cloneDef, getMode } from './utils';
 import { tagMessageRoles, updateMaxItemKey } from './messages';
 import { applyTheme } from './theme';
+import { applySiteTheme, resolveSiteTheme } from './site-theme';
 import { loadFont } from './font';
 import { createFloatAvatars, setupScrollAvatar, updateAvatarContent } from './avatars';
 import { setupKeyboard } from './navigation';
@@ -70,6 +71,8 @@ function init() {
     S.statusPollOn = GM_getValue(S.K.STATUS_POLL_ON, false);
     try { S.statusData = JSON.parse(GM_getValue(S.K.STATUS_DATA, 'null')); } catch (e) { S.statusData = null; }
 
+    // 站点尚未应用主题时（body 无 light/dark 类），按站点原生偏好预置，避免增强配色首屏错色
+    if (!document.body.classList.contains('dark') && !document.body.classList.contains('light')) applySiteTheme(resolveSiteTheme());
     S.currentMode = getMode(); S.currentItemKey = 1; S.maxItemKey = 0;
     applyTheme(S.currentMode); tagMessageRoles();
     createSwitcher(); setupKeyboard(); setupObservers();

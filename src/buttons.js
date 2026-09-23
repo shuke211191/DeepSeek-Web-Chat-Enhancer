@@ -2,6 +2,7 @@ import { S } from './state';
 import { getMode, updateUI } from './utils';
 import { tagMessageRoles } from './messages';
 import { applyTheme, applyAfter } from './theme';
+import { setSiteTheme } from './site-theme';
 import { loadFont } from './font';
 import { setAvatarState } from './avatars';
 import { createPanel, syncPanelMode, renderPanelContent } from './panel';
@@ -20,10 +21,10 @@ export function createSwitcher() {
     el.addEventListener('click', function (e) {
         var btn = e.target.closest('button'); if (!btn) return;
         if (btn.id === 'dse-dark-toggle') {
-            document.body.classList.toggle('dark');
-            if (document.body.classList.contains('dark')) document.body.setAttribute('data-ds-dark-theme', ''); else document.body.removeAttribute('data-ds-dark-theme');
-            btn.textContent = document.body.classList.contains('dark') ? '☀' : '🌙';
-            applyTheme(getMode()); if (S.panelVisible) syncPanelMode(); return;
+            var nm = getMode() === 'dark' ? 'light' : 'dark';
+            setSiteTheme(nm); // 与站点一致地改 body 类/属性，并把偏好写回站点原生 localStorage 键
+            btn.textContent = nm === 'dark' ? '☀' : '🌙';
+            applyTheme(nm); if (S.panelVisible) syncPanelMode(); return;
         }
         if (btn.id === 'dse-panel-trigger') {
             if (!S.panelRef) S.panelRef = createPanel();

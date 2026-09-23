@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DeepSeek Web Chat Enhancer
 // @namespace    https://chat.deepseek.com/
-// @version      4.7.2
+// @version      4.8.0
 // @description  允许修改页面配色、字体等，添加浮动头像、自动折叠、方向键跳转、服务状态查询等等功能，支持中英双语、预设导入导出。
 // @author       hjx
 // @license      MIT
@@ -550,6 +550,81 @@
     applyTheme(getMode());
     tagMessageRoles();
     updateUI();
+  }
+  var APP_ID = "@deepseek/chat";
+  var KEY_PREFIX = "__appKit_";
+  var KEY_SUFFIX = "_themePreference";
+  var DEFAULT_VERSION = "0";
+  function exactKey() {
+    return KEY_PREFIX + APP_ID + KEY_SUFFIX;
+  }
+  function findThemeKey() {
+    var exact = exactKey(), i, k;
+    try {
+      for (i = 0; i < localStorage.length; i++) {
+        if (localStorage.key(i) === exact) return exact;
+      }
+      for (i = 0; i < localStorage.length; i++) {
+        k = localStorage.key(i) || "";
+        if (k.indexOf(KEY_PREFIX) === 0 && k.slice(-KEY_SUFFIX.length) === KEY_SUFFIX) return k;
+      }
+    } catch (e) {
+    }
+    return exact;
+  }
+  function readSiteTheme() {
+    try {
+      var raw = localStorage.getItem(findThemeKey());
+      if (!raw) return null;
+      var v = JSON.parse(raw).value;
+      return v === "dark" || v === "light" || v === "system" ? v : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function resolveSiteTheme() {
+    var v = readSiteTheme();
+    if (v === "light" || v === "dark") return v;
+    try {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch (e) {
+      return "light";
+    }
+  }
+  function storedVersion(key) {
+    try {
+      var obj = JSON.parse(localStorage.getItem(key) || "null");
+      return obj && obj.__version != null ? obj.__version : DEFAULT_VERSION;
+    } catch (e) {
+      return DEFAULT_VERSION;
+    }
+  }
+  function saveSiteTheme(mode) {
+    var key = findThemeKey(), version = storedVersion(key);
+    try {
+      localStorage.setItem(key, JSON.stringify({ value: mode, __version: version }));
+    } catch (e) {
+    }
+  }
+  function applySiteTheme(mode) {
+    var body = document.body;
+    body.classList.add("change-theme");
+    if (mode === "dark") {
+      body.classList.remove("light");
+      body.classList.add("dark");
+      body.dataset.dsDarkTheme = "dark";
+    } else {
+      body.classList.remove("dark");
+      body.classList.add("light");
+      body.removeAttribute("data-ds-dark-theme");
+    }
+    setTimeout(function() {
+      body.classList.remove("change-theme");
+    }, 0);
+  }
+  function setSiteTheme(mode) {
+    applySiteTheme(mode);
+    saveSiteTheme(mode);
   }
   function loadFont() {
     if (S.fontLinkEl) {
@@ -2227,11 +2302,10 @@
       var btn = e.target.closest("button");
       if (!btn) return;
       if (btn.id === "dse-dark-toggle") {
-        document.body.classList.toggle("dark");
-        if (document.body.classList.contains("dark")) document.body.setAttribute("data-ds-dark-theme", "");
-        else document.body.removeAttribute("data-ds-dark-theme");
-        btn.textContent = document.body.classList.contains("dark") ? "☀" : "🌙";
-        applyTheme(getMode());
+        var nm = getMode() === "dark" ? "light" : "dark";
+        setSiteTheme(nm);
+        btn.textContent = nm === "dark" ? "☀" : "🌙";
+        applyTheme(nm);
         if (S.panelVisible) syncPanelMode();
         return;
       }
@@ -2441,6 +2515,7 @@
     } catch (e) {
       S.statusData = null;
     }
+    if (!document.body.classList.contains("dark") && !document.body.classList.contains("light")) applySiteTheme(resolveSiteTheme());
     S.currentMode = getMode();
     S.currentItemKey = 1;
     S.maxItemKey = 0;

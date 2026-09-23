@@ -1,5 +1,18 @@
 # DeepSeek Web Chat Enhancer — 变更日志
 
+## v4.8.0 (2026-09-23)
+
+### BUG 修复
+- **深浅色切换不被记忆** — 浮动按钮此前只改 DOM（`classList.toggle('dark')` + `setAttribute('data-ds-dark-theme','')`），未写入任何持久化；站点每次加载都会用自己的主题偏好重刷 body，刷新后切换结果丢失。现在与站点原生偏好对齐：
+  - 新增 `site-theme.js`：读写站点 localStorage 键 `__appKit_@deepseek/chat_themePreference`（格式 `{"value":"system|light|dark","__version":"0"}`，与站点 appKit 存储句柄一致，`__version` 沿用已有值），键名支持按前缀/后缀扫描以适配 appId 变化
+  - 切换时复刻站点 `o()` 的写法：`light`/`dark` 类互斥 + `data-ds-dark-theme="dark"`（此前遗留 `light dark` 并存、属性值为空串），并在 `change-theme` 期间禁用过渡
+  - `main.js` 初始化时若站点尚未应用主题（body 无 `light`/`dark` 类），按站点原生偏好预置，消除增强配色首屏错色
+
+### 新增模块
+- `site-theme.js` — 站点原生主题偏好的读取、解析、写回与 DOM 对齐
+
+---
+
 ## v4.7.0 (2026-07-04)
 
 ### 新增功能

@@ -9,6 +9,7 @@ src/
 ├── utils.js        纯工具函数（无副作用）
 ├── messages.js     消息 DOM 操作与角色标记
 ├── theme.js        CSS 构造与应用
+├── site-theme.js   站点原生主题偏好（localStorage）读写与 body 对齐
 ├── font.js         字体加载
 ├── avatars.js      浮动头像系统
 ├── navigation.js   消息跳转导航 + 键盘事件
@@ -55,6 +56,15 @@ src/
 - `buildBubbleCSS(mode)` — 构造消息气泡颜色 CSS
 - `buildSCCSS(mode)` — 构造强调/代码颜色 CSS
 - `applyTheme(mode)` — 根据 S 中的开关状态注入/清除样式
+
+### `site-theme.js`
+站点把主题偏好存在 localStorage 的 `__appKit_@deepseek/chat_themePreference`（`{"value":"system"|"light"|"dark","__version":"0"}`），启动时按该值重设 body。脚本必须写同一个键，刷新后才记得住。
+- `findThemeKey()` — 定位偏好键（精确键优先，其次按 `__appKit_*_themePreference` 扫描）
+- `readSiteTheme()` — 返回 `'system'` / `'light'` / `'dark'` 或 `null`
+- `resolveSiteTheme()` — 解析为实际生效的 `'light'` / `'dark'`（`system` 读 `prefers-color-scheme`）
+- `saveSiteTheme(mode)` — 写回站点原生偏好，`__version` 沿用已有值
+- `applySiteTheme(mode)` — 复刻站点写法：`light`/`dark` 互斥类 + `data-ds-dark-theme="dark"`，`change-theme` 期间禁用过渡
+- `setSiteTheme(mode)` — 先对齐 DOM 再写回偏好
 
 ### `font.js`
 - `loadFont()` — 根据 S.fontOn / S.fontSrc / S.fontName 加载或清除字体
@@ -158,6 +168,7 @@ main.js
   ├── utils.js                   (独立)
   ├── messages.js ── state, utils
   ├── theme.js ───── state
+  ├── site-theme.js              (独立)
   ├── font.js ────── state
   ├── avatars.js ─── state, utils
   ├── navigation.js ─ state, utils, messages
